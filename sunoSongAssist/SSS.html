@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SunoSongsSistent</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .editor-font { font-family: 'Roboto Mono', monospace; line-height: 1.6; font-size: 1em; }
+        .jukebox-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1.5rem; }
+        .lyrics-section-bubble { padding: 12px; margin-bottom: 10px; border-radius: 8px; transition: all 0.3s ease; cursor: grab; border: 2px solid transparent; }
+        .unsectioned-bubble { border-style: dashed; border-color: #FBBF24; }
+        .empty-bubble { border-style: dashed; border-color: #4B5563; }
+        .lyrics-section-bubble:active { cursor: grabbing; }
+        .lyrics-section-bubble.dragging { opacity: 0.5; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.3); }
+        .lyrics-section-bubble textarea { width: 100%; background: transparent; border: none; color: white; resize: none; outline: none; overflow-y: hidden; }
+        .fab { transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out; }
+        .fab:hover { transform: scale(1.05); }
+        .menu-dropdown { display: none; position: absolute; background-color: #2d3748; min-width: 200px; box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2); z-index: 10; border-radius: 8px; border: 1px solid #4a5568; right: 0; margin-top: 4px; }
+        .menu-dropdown-item { padding: 12px 16px; cursor: pointer; }
+        .menu-dropdown-item:hover { background-color: #4a5568; }
+        .version-dropdown-content { max-height: 400px; overflow-y: auto; }
+        .version-notes { font-size: 0.85em; color: #a0aec0; white-space: normal; }
+        .draft-version { color: #9CA3AF; }
+        #song-title[contenteditable]:focus { outline: 2px dashed #a78bfa; border-radius: 4px; }
+        .switch-btn { padding: 6px; border-radius: 9999px; transition: background-color 0.2s ease; }
+        .switch-btn.active { background-color: #581c87; }
+        .spinning-record { animation: spin 4s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body class="bg-gray-900 text-white">
+
+    <nav class="sticky top-0 z-20 bg-gray-900/80 backdrop-blur-md shadow-lg">
+        <div class="container mx-auto flex justify-between items-center p-4">
+            <div class="text-2xl font-bold text-purple-400">SunoSongsSistent</div>
+            <div class="flex items-center gap-4">
+                <div class="relative">
+                    <button id="file-menu-btn" class="text-gray-400 hover:text-white transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" /></svg>
+                    </button>
+                    <div id="file-menu-dropdown" class="menu-dropdown">
+                        <label for="song-importer" class="menu-dropdown-item block">Import Song (.json)</label>
+                        <input type="file" id="song-importer" class="hidden" accept=".json">
+                        <button id="export-song-btn" class="menu-dropdown-item w-full text-left" disabled>Export Current Song</button>
+                    </div>
+                </div>
+                <div class="relative">
+                    <button id="settings-btn" class="text-gray-400 hover:text-white transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div id="app" class="p-4 sm:p-6 lg:p-8">
+        <div id="jukebox-view" class="relative">
+            <div id="jukebox-grid" class="jukebox-grid"></div>
+            <button id="create-new-song-fab" class="fab fixed bottom-8 left-8 w-20 h-20 rounded-full shadow-lg flex items-center justify-center">
+                <svg class="w-full h-full" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                    <g class="spinning-record" transform-origin="50 50">
+                        <circle cx="50" cy="50" r="48" fill="#111827" stroke="#374151" stroke-width="2"/>
+                        <circle cx="50" cy="50" r="42" fill="none" stroke="url(#sheen)" stroke-width="1.5"/>
+                        <circle cx="50" cy="50" r="36" fill="none" stroke="#222222" stroke-width="1.5"/>
+                        <circle cx="50" cy="50" r="30" fill="none" stroke="#2a2a2a" stroke-width="1.5"/>
+                        <circle cx="50" cy="50" r="20" fill="url(#labelGradient)" />
+                        <circle cx="50" cy="50" r="5" fill="#111827" />
+                    </g>
+                    <g transform="scale(1.5)" transform-origin="50 50">
+                       <path d="M 50 42 V 58 M 42 50 H 58" stroke="white" stroke-width="3" stroke-linecap="round"/>
+                    </g>
+                    <defs>
+                        <linearGradient id="sheen" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" style="stop-color:#555;stop-opacity:1" />
+                            <stop offset="25%" style="stop-color:#2a2a2a;stop-opacity:1" />
+                            <stop offset="50%" style="stop-color:#555;stop-opacity:1" />
+                            <stop offset="75%" style="stop-color:#2a2a2a;stop-opacity:1" />
+                            <stop offset="100%" style="stop-color:#555;stop-opacity:1" />
+                        </linearGradient>
+                         <radialGradient id="labelGradient" cx="50%" cy="50%" r="50%" fx="50%" fy="50%">
+                            <stop offset="0%" style="stop-color:#c084fc;stop-opacity:1" />
+                            <stop offset="100%" style="stop-color:#a855f7;stop-opacity:1" />
+                        </radialGradient>
+                    </defs>
+                </svg>
+            </button>
+        </div>
+
+        <div id="song-ui-view" class="hidden">
+            <div class="flex justify-between items-center mb-6">
+                <div>
+                    <button id="back-to-jukebox" class="text-purple-400 hover:underline">&larr; Back to Jukebox</button>
+                    <h1 id="song-title" class="text-4xl font-bold" contenteditable="true"></h1>
+                </div>
+                <div class="flex items-center gap-4">
+                    <div id="auto-save-status" class="text-sm text-gray-400 transition-opacity duration-500 opacity-0"></div>
+                    <div class="relative inline-block text-left">
+                        <button type="button" id="version-picker-btn" class="inline-flex justify-center w-full rounded-md border border-gray-600 shadow-sm px-4 py-2 bg-gray-700 text-sm font-medium text-white hover:bg-gray-600 focus:outline-none">
+                            Version: <span id="version-display" class="ml-2 font-bold"></span>
+                            <svg class="-mr-1 ml-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
+                        </button>
+                        <div id="version-dropdown" class="menu-dropdown version-dropdown-content"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-8">
+                <!-- Left Half -->
+                <div class="relative">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-2xl font-semibold text-purple-300">Lyrics</h2>
+                        <div class="bg-gray-700 p-1 rounded-full text-sm flex items-center">
+                            <button id="bubbles-view-btn" class="switch-btn active" title="Bubble View">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="currentColor" viewBox="0 0 16 16">
+                                    <path d="M5 3a1 1 0 0 0-1 1v2a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4a1 1 0 0 0-1-1H5zm0 5a1 1 0 0 0-1 1v2a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1H5z"/>
+                                    <path d="M12 3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h8zm0 1H4v10h8V4z"/>
+                                    <path d="M11.5 6.5A1.5 1.5 0 0 1 13 8V4.5A1.5 1.5 0 0 0 11.5 3H11v1h.5a.5.5 0 0 1 .5.5V6.5z"/>
+                                </svg>
+                            </button>
+                            <button id="text-view-btn" class="switch-btn" title="Text View">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="currentColor" viewBox="0 0 16 16">
+                                    <path d="M2 4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V4zm0 5a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V9z"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    <div id="lyrics-editor-container" class="bg-gray-800 p-4 rounded-lg h-[60vh] overflow-y-auto"></div>
+                    <textarea id="plain-text-editor" class="bg-gray-800 p-4 rounded-lg h-[60vh] w-full editor-font text-white hidden resize-none outline-none"></textarea>
+                    <div class="absolute bottom-6 right-6 flex items-center gap-2 bg-gray-900/70 backdrop-blur-sm border border-gray-600 rounded-full p-1 shadow-lg">
+                        <span class="text-sm text-gray-300 pl-4 pr-2">Save as...</span>
+                        <button id="create-version-btn" class="fab bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-5 rounded-full">Version</button>
+                        <button id="save-draft-btn" class="fab bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-5 rounded-full">Draft</button>
+                    </div>
+                </div>
+
+                <!-- Right Half -->
+                <div>
+                    <div class="mb-6">
+                        <h2 class="text-2xl font-semibold mb-4 text-purple-300">Style</h2>
+                        <div class="bg-gray-800 p-4 rounded-lg"><textarea id="style-textarea" class="w-full h-24 bg-transparent text-gray-200 resize-none outline-none"></textarea></div>
+                    </div>
+                    <div class="mb-6">
+                        <h2 class="text-2xl font-semibold mb-4 text-purple-300">Links</h2>
+                        <div class="bg-gray-800 p-4 rounded-lg">
+                            <div id="links-list"></div>
+                            <div class="flex mt-2"><input type="text" id="new-link-input" placeholder="Add a new link" class="flex-grow bg-gray-700 rounded-l-md p-2 outline-none"><button id="add-link-button" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-r-md">Add</button></div>
+                        </div>
+                    </div>
+                    <div class="mb-6">
+                        <h2 class="text-2xl font-semibold mb-4 text-purple-300">Notes</h2>
+                        <div class="bg-gray-800 p-4 rounded-lg"><textarea id="notes-textarea" class="w-full h-24 bg-transparent text-gray-200 resize-none outline-none"></textarea></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // --- DB HELPER ---
+        const DB_NAME = 'SunoSongsDB';
+        const DB_VERSION = 1;
+        const STORE_NAME = 'songs';
+        let db;
+
+        function openDB() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open(DB_NAME, DB_VERSION);
+                request.onerror = () => reject("Error opening DB");
+                request.onsuccess = () => {
+                    db = request.result;
+                    resolve(db);
+                };
+                request.onupgradeneeded = (event) => {
+                    const db = event.target.result;
+                    db.createObjectStore(STORE_NAME, { keyPath: 'songKey' });
+                };
+            });
+        }
+
+        function saveSongToDB(songData) {
+            return new Promise((resolve, reject) => {
+                const transaction = db.transaction([STORE_NAME], 'readwrite');
+                const store = transaction.objectStore(STORE_NAME);
+                const request = store.put(songData);
+                request.onsuccess = () => resolve();
+                request.onerror = () => reject("Error saving song");
+            });
+        }
+        
+        function deleteSongFromDB(songKey) {
+             return new Promise((resolve, reject) => {
+                const transaction = db.transaction([STORE_NAME], 'readwrite');
+                const store = transaction.objectStore(STORE_NAME);
+                const request = store.delete(songKey);
+                request.onsuccess = () => resolve();
+                request.onerror = () => reject("Error deleting song");
+            });
+        }
+
+        function getAllSongsFromDB() {
+            return new Promise((resolve, reject) => {
+                const transaction = db.transaction([STORE_NAME], 'readonly');
+                const store = transaction.objectStore(STORE_NAME);
+                const request = store.getAll();
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = () => reject("Error fetching songs");
+            });
+        }
+
+        // --- DOM Elements ---
+        const jukeboxView = document.getElementById('jukebox-view');
+        const songUiView = document.getElementById('song-ui-view');
+        const backToJukeboxBtn = document.getElementById('back-to-jukebox');
+        const songImporter = document.getElementById('song-importer');
+        const jukeboxGrid = document.getElementById('jukebox-grid');
+        const createNewSongFab = document.getElementById('create-new-song-fab');
+        const songTitle = document.getElementById('song-title');
+        const versionPickerBtn = document.getElementById('version-picker-btn');
+        const versionDisplay = document.getElementById('version-display');
+        const versionDropdown = document.getElementById('version-dropdown');
+        const lyricsEditorContainer = document.getElementById('lyrics-editor-container');
+        const plainTextEditor = document.getElementById('plain-text-editor');
+        const bubblesViewBtn = document.getElementById('bubbles-view-btn');
+        const textViewBtn = document.getElementById('text-view-btn');
+        const styleTextarea = document.getElementById('style-textarea');
+        const notesTextarea = document.getElementById('notes-textarea');
+        const linksList = document.getElementById('links-list');
+        const newLinkInput = document.getElementById('new-link-input');
+        const addLinkButton = document.getElementById('add-link-button');
+        const saveDraftBtn = document.getElementById('save-draft-btn');
+        const createVersionBtn = document.getElementById('create-version-btn');
+        const autoSaveStatus = document.getElementById('auto-save-status');
+        const fileMenuBtn = document.getElementById('file-menu-btn');
+        const fileMenuDropdown = document.getElementById('file-menu-dropdown');
+        const exportSongBtn = document.getElementById('export-song-btn');
+
+        // --- State ---
+        let currentSongKey = null;
+        let allSongs = {};
+        const sectionColors = {};
+        let autoSaveInterval = null;
+        let currentEditorMode = 'bubbles';
+        let isDirty = false;
+        const AUTO_SAVE_TIME = 60000;
+
+        // --- Sample Data ---
+        const sampleSong = {
+            songKey: "chinese_roomba",
+            songName: "Chinese Roomba",
+            versions: [{
+                version: "00000",
+                creationDate: new Date().toISOString(),
+                lyrics: [
+                    `[Intro]\n"Opa! Gimme the microphone"`,
+                    `This is a section without a tag.\nIt should be colorless.`,
+                    `[Verse]\nBack then, you'd meet at the store,\nSame town, street, building, or next door.`
+                ],
+                style: "A fusion of Arabic ballad and Electro-Funk.",
+                links: ["https://suno.com/song/example1"],
+                notes: "Initial version created from scratch."
+            }]
+        };
+
+        // --- Initialization ---
+        document.addEventListener('DOMContentLoaded', async () => {
+            await openDB();
+            const songsFromDB = await getAllSongsFromDB();
+            if (songsFromDB.length === 0) {
+                allSongs[sampleSong.songKey] = sampleSong;
+                await saveSongToDB(sampleSong);
+            } else {
+                songsFromDB.forEach(song => {
+                    allSongs[song.songKey] = song;
+                });
+            }
+            init();
+        });
+
+        function init() {
+            renderJukebox();
+            backToJukeboxBtn.addEventListener('click', () => {
+                clearInterval(autoSaveInterval);
+                showJukeboxView();
+            });
+            songImporter.addEventListener('change', handleFileImport);
+            createNewSongFab.addEventListener('click', createNewSong);
+            saveDraftBtn.addEventListener('click', () => saveDraft(true));
+            createVersionBtn.addEventListener('click', createVersion);
+            versionPickerBtn.addEventListener('click', () => {
+                versionDropdown.style.display = versionDropdown.style.display === 'block' ? 'none' : 'block';
+            });
+            addLinkButton.addEventListener('click', addLink);
+            fileMenuBtn.addEventListener('click', () => {
+                fileMenuDropdown.style.display = fileMenuDropdown.style.display === 'block' ? 'none' : 'block';
+            });
+            exportSongBtn.addEventListener('click', exportCurrentSong);
+            songTitle.addEventListener('blur', renameSong);
+            bubblesViewBtn.addEventListener('click', () => switchToBubbleView());
+            textViewBtn.addEventListener('click', switchToTextView);
+
+            [styleTextarea, notesTextarea, newLinkInput].forEach(el => el.addEventListener('input', () => isDirty = true));
+            
+            lyricsEditorContainer.addEventListener('dragover', e => {
+                e.preventDefault();
+                const draggingElement = document.querySelector('.dragging');
+                if (!draggingElement) return;
+                const afterElement = getDragAfterElement(lyricsEditorContainer, e.clientY);
+                lyricsEditorContainer.insertBefore(draggingElement, afterElement);
+            });
+
+            window.addEventListener('click', (event) => {
+                if (!versionPickerBtn.contains(event.target) && !versionDropdown.contains(event.target)) {
+                    versionDropdown.style.display = 'none';
+                }
+                if (!fileMenuBtn.contains(event.target) && !fileMenuDropdown.contains(event.target)) {
+                    fileMenuDropdown.style.display = 'none';
+                }
+            });
+        }
+
+        // --- View Management ---
+        function showJukeboxView() {
+            exportSongBtn.disabled = true;
+            gsap.to(songUiView, { opacity: 0, duration: 0.3, onComplete: () => {
+                songUiView.classList.add('hidden');
+                jukeboxView.classList.remove('hidden');
+                gsap.fromTo(jukeboxView, { opacity: 0 }, { opacity: 1, duration: 0.3 });
+                renderJukebox();
+            }});
+        }
+        function showSongUiView(onCompleteCallback) {
+            exportSongBtn.disabled = false;
+            gsap.to(jukeboxView, { opacity: 0, duration: 0.3, onComplete: () => {
+                jukeboxView.classList.add('hidden');
+                songUiView.classList.remove('hidden');
+                gsap.fromTo(songUiView, { opacity: 0 }, { opacity: 1, duration: 0.3, onComplete: onCompleteCallback });
+            }});
+        }
+
+        // --- Jukebox Logic ---
+        function renderJukebox() {
+            jukeboxGrid.innerHTML = '';
+            Object.values(allSongs).forEach(song => {
+                const latestVersion = song.versions[song.versions.length - 1];
+                const card = document.createElement('div');
+                card.className = "bg-gray-800 p-4 rounded-lg cursor-pointer hover:bg-gray-700";
+                
+                const displayVersion = formatVersionString(latestVersion.version);
+                const lastUpdated = new Date(latestVersion.creationDate).toLocaleString([], {
+                    year: 'numeric', month: 'numeric', day: 'numeric',
+                    hour: '2-digit', minute: '2-digit', hour12: false
+                });
+
+                card.innerHTML = `
+                    <h2 class="text-xl font-bold text-purple-300">${song.songName} <span class="text-base text-gray-400 font-normal">${displayVersion}</span></h2>
+                    <p class="text-xs text-gray-500 mt-1">Last updated: ${lastUpdated}</p>
+                `;
+                card.addEventListener('click', () => loadSong(song.songKey, latestVersion.version));
+                jukeboxGrid.appendChild(card);
+            });
+        }
+
+        // --- Song Loading & Creation ---
+        async function handleFileImport(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const songData = JSON.parse(await file.text());
+            if (songData && songData.songKey && songData.versions) {
+                allSongs[songData.songKey] = songData;
+                await saveSongToDB(songData);
+                renderJukebox();
+            }
+            event.target.value = null;
+        }
+
+        function loadSong(songKey, versionString) {
+            clearInterval(autoSaveInterval);
+            isDirty = false;
+            currentSongKey = songKey;
+            const song = allSongs[currentSongKey];
+            const version = song.versions.find(v => v.version === versionString);
+
+            songTitle.textContent = song.songName;
+            styleTextarea.value = version.style || '';
+            notesTextarea.value = version.notes || '';
+            
+            lyricsEditorContainer.innerHTML = ''; 
+            
+            populateVersionPicker();
+            renderLinks(version.links || []);
+
+            showSongUiView(() => {
+                switchToBubbleView(version.lyrics);
+                autoSaveInterval = setInterval(saveDraft, AUTO_SAVE_TIME);
+            });
+        }
+
+        async function createNewSong() {
+            let untitledCount = 1;
+            let newSongKey;
+            let newSongName;
+            do {
+                newSongName = `Untitled Song ${untitledCount}`;
+                newSongKey = newSongName.toLowerCase().replace(/\s+/g, '_');
+                untitledCount++;
+            } while (allSongs[newSongKey]);
+
+            const newSongData = {
+                songKey: newSongKey,
+                songName: newSongName,
+                versions: [{
+                    version: `00000`,
+                    creationDate: new Date().toISOString(),
+                    lyrics: [`[Verse]\nYour lyrics here...`, ''],
+                    style: "", links: [], notes: "First version."
+                }]
+            };
+            allSongs[newSongKey] = newSongData;
+            await saveSongToDB(newSongData);
+            loadSong(newSongKey, '00000');
+        }
+
+        async function renameSong() {
+            const newName = songTitle.textContent.trim();
+            if (!newName || newName === allSongs[currentSongKey].songName) {
+                songTitle.textContent = allSongs[currentSongKey].songName;
+                return;
+            }
+
+            const newKey = newName.toLowerCase().replace(/\s+/g, '_');
+            if (allSongs[newKey]) {
+                alert("A song with this name already exists. Please choose a different name.");
+                songTitle.textContent = allSongs[currentSongKey].songName;
+                return;
+            }
+
+            const oldKey = currentSongKey;
+            const songData = allSongs[oldKey];
+            
+            songData.songKey = newKey;
+            songData.songName = newName;
+            allSongs[newKey] = songData;
+            delete allSongs[oldKey];
+            currentSongKey = newKey;
+
+            await saveSongToDB(songData);
+            await deleteSongFromDB(oldKey);
+
+            showSaveStatus("Song renamed!");
+        }
+
+        // --- LYRICS EDITOR ---
+        function switchToBubbleView(lyrics) {
+            currentEditorMode = 'bubbles';
+            bubblesViewBtn.classList.add('active');
+            textViewBtn.classList.remove('active');
+            lyricsEditorContainer.classList.remove('hidden');
+            plainTextEditor.classList.add('hidden');
+            const lyricsArray = lyrics || plainTextEditor.value.split(/\n\s*\n/);
+            renderLyricsBubbles(lyricsArray);
+        }
+
+        function switchToTextView() {
+            currentEditorMode = 'text';
+            textViewBtn.classList.add('active');
+            bubblesViewBtn.classList.remove('active');
+            plainTextEditor.classList.remove('hidden');
+            lyricsEditorContainer.classList.add('hidden');
+            plainTextEditor.value = getLyricsAsArray().join('\n\n');
+        }
+
+        function createBubbleElement(sectionText) {
+            const bubble = document.createElement('div');
+            bubble.draggable = true;
+            bubble.className = 'lyrics-section-bubble';
+            
+            const textarea = document.createElement('textarea');
+            textarea.value = sectionText;
+            textarea.className = 'editor-font';
+            
+            bubble.appendChild(textarea);
+            updateBubbleStyle(bubble);
+
+            bubble.addEventListener('dragstart', () => bubble.classList.add('dragging'));
+            bubble.addEventListener('dragend', () => bubble.classList.remove('dragging'));
+            
+            textarea.addEventListener('input', (e) => {
+                isDirty = true;
+                autoResizeTextarea(e);
+                maybeAddNewBubble(e);
+                updateBubbleStyle(bubble);
+            });
+            textarea.addEventListener('keydown', handleTabText);
+
+            return bubble;
+        }
+
+        function updateBubbleStyle(bubble) {
+            const textarea = bubble.querySelector('textarea');
+            if (!textarea) return;
+            const text = textarea.value;
+            const firstLine = text.split('\n')[0].trim();
+
+            bubble.classList.remove('unsectioned-bubble', 'empty-bubble');
+            
+            if (text.trim() === '') {
+                bubble.classList.add('empty-bubble');
+                bubble.style.backgroundColor = 'transparent';
+            } else if (firstLine.startsWith('[') && firstLine.endsWith(']')) {
+                const sectionId = firstLine.substring(1, firstLine.length - 1).split(':')[0].trim();
+                bubble.style.backgroundColor = getSectionColor(sectionId);
+            } else {
+                bubble.classList.add('unsectioned-bubble');
+                bubble.style.backgroundColor = 'transparent';
+            }
+        }
+
+        function renderLyricsBubbles(lyricsArray) {
+            lyricsEditorContainer.innerHTML = '';
+            
+            if (typeof lyricsArray === 'string') {
+                lyricsArray = lyricsArray.split(/\n\s*\n/);
+            }
+
+            lyricsArray.forEach(sectionText => {
+                lyricsEditorContainer.appendChild(createBubbleElement(sectionText));
+            });
+            
+            const lastBubble = lyricsEditorContainer.lastElementChild;
+            if (!lastBubble || lastBubble.querySelector('textarea').value.trim() !== '') {
+                 lyricsEditorContainer.appendChild(createBubbleElement(''));
+            }
+
+            lyricsEditorContainer.querySelectorAll('textarea').forEach(textarea => {
+                autoResizeTextarea({ target: textarea });
+            });
+        }
+
+        function getLyricsAsArray() {
+            if (currentEditorMode === 'bubbles') {
+                const sections = [];
+                const textareas = lyricsEditorContainer.querySelectorAll('.lyrics-section-bubble textarea');
+                textareas.forEach(textarea => {
+                    sections.push(textarea.value);
+                });
+                if (sections.length > 1 && sections[sections.length - 1].trim() === '') {
+                    sections.pop();
+                }
+                return sections;
+            } else {
+                return plainTextEditor.value.split(/\n\s*\n/);
+            }
+        }
+
+        function autoResizeTextarea(event) {
+            const textarea = event.target;
+            textarea.style.height = 'auto';
+            textarea.style.height = textarea.scrollHeight + 'px';
+        }
+
+        function maybeAddNewBubble(event) {
+            const textarea = event.target;
+            const bubble = textarea.parentElement;
+            if (bubble === lyricsEditorContainer.lastElementChild && textarea.value.trim() !== '') {
+                lyricsEditorContainer.appendChild(createBubbleElement(''));
+            }
+        }
+        
+        function handleTabText(event) {
+            if (event.key === 'Tab') {
+                event.preventDefault();
+                const textareas = Array.from(lyricsEditorContainer.querySelectorAll('textarea'));
+                const currentIndex = textareas.indexOf(event.target);
+                const nextIndex = (currentIndex + 1) % textareas.length;
+                textareas[nextIndex].focus();
+            }
+        }
+
+        function getDragAfterElement(container, y) {
+            const draggableElements = [...container.querySelectorAll('.lyrics-section-bubble:not(.dragging)')];
+            return draggableElements.reduce((closest, child) => {
+                const box = child.getBoundingClientRect();
+                const offset = y - box.top - box.height / 2;
+                if (offset < 0 && offset > closest.offset) {
+                    return { offset: offset, element: child };
+                } else {
+                    return closest;
+                }
+            }, { offset: Number.NEGATIVE_INFINITY }).element;
+        }
+        
+        function getSectionColor(sectionId) {
+            const baseColors = ['#4A235A', '#154360', '#145A32', '#6E2C00', '#5B2C6F', '#0E6251', '#78281F', '#424949'];
+            let hash = 0;
+            for (let i = 0; i < sectionId.length; i++) hash = sectionId.charCodeAt(i) + ((hash << 5) - hash);
+            return baseColors[Math.abs(hash % baseColors.length)];
+        }
+
+        // --- Versioning and Saving ---
+        async function saveDraft(isManual = false) {
+            if (!isDirty && !isManual) return; // Don't auto-save if no changes
+
+            const song = allSongs[currentSongKey];
+            const latestVersion = song.versions[song.versions.length - 1];
+            
+            const [mainVersion, draftVersion] = latestVersion.version.split('.');
+            const nextDraftNum = draftVersion ? parseInt(draftVersion) + 1 : 1;
+            const newVersionString = `${mainVersion}.${nextDraftNum}`;
+
+            const newDraft = {
+                version: newVersionString,
+                creationDate: new Date().toISOString(),
+                lyrics: getLyricsAsArray(),
+                style: styleTextarea.value,
+                links: allSongs[currentSongKey].versions[allSongs[currentSongKey].versions.length - 1].links || [],
+                notes: "Auto-saved draft."
+            };
+
+            song.versions.push(newDraft);
+            await saveSongToDB(song);
+            isDirty = false;
+            
+            if (isManual) {
+                showSaveStatus("Draft saved!");
+            } else {
+                showSaveStatus(`Auto-saved at ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`);
+            }
+            
+            loadSong(currentSongKey, newVersionString);
+        }
+        
+        async function createVersion() {
+            clearInterval(autoSaveInterval);
+            const song = allSongs[currentSongKey];
+            const latestVersion = song.versions[song.versions.length - 1];
+            const mainVersion = parseInt(latestVersion.version.split('.')[0]);
+            const newVersionNum = (mainVersion + 1).toString().padStart(5, '0');
+
+            const newVersion = {
+                 version: newVersionNum,
+                creationDate: new Date().toISOString(),
+                lyrics: getLyricsAsArray(),
+                style: styleTextarea.value,
+                links: latestVersion.links || [],
+                notes: prompt("Enter notes for this new version:", `Changes from v${mainVersion}`) || "New version."
+            };
+
+            song.versions.push(newVersion);
+            await saveSongToDB(song);
+            isDirty = false;
+            showSaveStatus(`Version ${newVersionNum} created!`);
+            loadSong(currentSongKey, newVersionNum);
+        }
+
+        function showSaveStatus(message) {
+            autoSaveStatus.textContent = message;
+            gsap.to(autoSaveStatus, { opacity: 1, duration: 0.5, onComplete: () => {
+                gsap.to(autoSaveStatus, { opacity: 0, duration: 0.5, delay: 2 });
+            }});
+        }
+        
+        function formatVersionString(version) {
+            if (version.includes('.')) {
+                const parts = version.split('.');
+                return `v${parseInt(parts[0])}.${parts[1]}`;
+            } else {
+                return `v${parseInt(version)}`;
+            }
+        }
+
+        function populateVersionPicker() {
+            const song = allSongs[currentSongKey];
+            const latestVersion = song.versions[song.versions.length - 1];
+            versionDisplay.textContent = formatVersionString(latestVersion.version);
+            versionDropdown.innerHTML = '';
+            
+            song.versions.slice().reverse().forEach(v => {
+                const item = document.createElement('div');
+                item.style.cursor = 'pointer';
+                const date = new Date(v.creationDate || Date.now()).toLocaleString([], {
+                    year: 'numeric', month: 'numeric', day: 'numeric',
+                    hour: '2-digit', minute: '2-digit', hour12: false
+                });
+                let versionClass = v.version.includes('.') ? 'draft-version' : 'font-bold';
+                
+                item.innerHTML = `<p class="${versionClass} menu-dropdown-item">Version ${v.version}</p><p class="version-notes">${v.notes}</p><p class="text-xs text-gray-500 mt-1">${date}</p>`;
+                item.onclick = () => {
+                    versionDropdown.style.display = 'none';
+                    if (v.version !== latestVersion.version) {
+                        loadSong(currentSongKey, v.version);
+                    }
+                };
+                versionDropdown.appendChild(item);
+            });
+        }
+
+        function exportCurrentSong() {
+            if (!currentSongKey) return;
+            const songData = allSongs[currentSongKey];
+            const fileName = `${songData.songKey}.json`;
+            const fileContent = JSON.stringify(songData, null, 2);
+            
+            const a = document.createElement("a");
+            const file = new Blob([fileContent], { type: 'application/json' });
+            a.href = URL.createObjectURL(file);
+            a.download = fileName;
+            a.click();
+            URL.revokeObjectURL(a.href);
+        }
+
+        // --- Other Helpers ---
+        function renderLinks(links) {
+            linksList.innerHTML = '';
+            if (!links || links.length === 0) {
+                linksList.innerHTML = `<p class="text-gray-500">No links added.</p>`;
+                return;
+            }
+            links.forEach((link, index) => {
+                const linkEl = document.createElement('div');
+                linkEl.className = 'flex justify-between items-center bg-gray-700 p-2 rounded-md mb-2';
+                linkEl.innerHTML = `<a href="${link}" target="_blank" class="text-purple-400 hover:underline truncate">${link}</a><button data-index="${index}" class="remove-link-btn text-red-500 hover:text-red-400 font-bold text-xl">&times;</button>`;
+                linksList.appendChild(linkEl);
+            });
+            document.querySelectorAll('.remove-link-btn').forEach(btn => btn.addEventListener('click', (e) => removeLink(e.target.dataset.index)));
+        }
+        function addLink() {
+            const newLink = newLinkInput.value.trim();
+            if (newLink) {
+                isDirty = true;
+                const song = allSongs[currentSongKey];
+                const latestVersion = song.versions[song.versions.length - 1];
+                if (!latestVersion.links) latestVersion.links = [];
+                latestVersion.links.push(newLink);
+                renderLinks(latestVersion.links);
+            }
+        }
+        function removeLink(index) {
+            isDirty = true;
+            const song = allSongs[currentSongKey];
+            const latestVersion = song.versions[song.versions.length - 1];
+            latestVersion.links.splice(index, 1);
+            renderLinks(latestVersion.links);
+        }
+    </script>
+</body>
+</html>
