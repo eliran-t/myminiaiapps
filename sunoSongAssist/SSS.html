@@ -261,37 +261,55 @@
             position: relative;
             z-index: 3;
             text-align: center;
-            padding: 20px;
+            padding: 15px 20px 2px 20px;
             transition: transform 0.6s ease;
             max-width: 200px;
+            height: 160px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
         }
 
         .record-title {
             font-size: 1.5rem;
             font-weight: bold;
             color: white;
-            margin-bottom: 8px;
             text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
             line-height: 1.2;
+            flex: 1;
+            display: flex;
+            align-items: center;
+            text-align: center;
+            margin-bottom: auto;
+        }
+
+        .record-bottom {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1px;
+            margin-top: auto;
+            padding-bottom: 0px;
         }
 
         .record-version {
             display: inline-block;
             background: rgba(0, 0, 0, 0.8);
             color: white;
-            padding: 6px 12px;
-            border-radius: 16px;
-            font-size: 0.75rem;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.7rem;
             font-weight: 600;
-            margin-bottom: 8px;
             border: 2px solid rgba(168, 85, 247, 0.6);
             text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
         }
 
         .record-date {
-            font-size: 0.65rem;
+            font-size: 0.6rem;
             color: #999;
             text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+            margin-top: 1px;
         }
 
         .delete-record-icon {
@@ -822,8 +840,10 @@
                     </div>
                     <div class="record-content">
                         <h2 class="record-title">${song.songName}</h2>
-                        <p class="record-date">${lastUpdated}</p>
-                        <div class="record-version">${displayVersion}</div>
+                        <div class="record-bottom">
+                            <p class="record-date">${lastUpdated}</p>
+                            <div class="record-version">${displayVersion}</div>
+                        </div>
                     </div>
                 `;
                 card.addEventListener('click', () => loadSong(song.songKey, latestVersion.version));
@@ -1190,22 +1210,172 @@
 
             song.versions.slice().reverse().forEach(v => {
                 const item = document.createElement('div');
-                item.style.cursor = 'pointer';
+                item.className = 'version-item border-b border-gray-600 last:border-b-0';
                 const date = new Date(v.creationDate || Date.now()).toLocaleString([], {
                     year: 'numeric', month: 'numeric', day: 'numeric',
                     hour: '2-digit', minute: '2-digit', hour12: false
                 });
                 let versionClass = v.version.includes('.') ? 'draft-version' : 'font-bold';
+                const displayVersion = formatVersionString(v.version);
+                
+                // Handle auto-saved drafts - show icon instead of text
+                let notesDisplay = v.notes || '';
+                if (notesDisplay.toLowerCase().includes('auto-saved') || notesDisplay.toLowerCase().includes('auto-save')) {
+                    notesDisplay = '<i class="fas fa-floppy-disk text-gray-400 text-sm" title="Auto-saved draft"></i>';
+                } else if (notesDisplay) {
+                    notesDisplay = `<span class="text-sm text-gray-300">${notesDisplay}</span>`;
+                }
 
-                item.innerHTML = `<p class="${versionClass} menu-dropdown-item">Version ${v.version}</p><p class="version-notes">${v.notes}</p><p class="text-xs text-gray-500 mt-1">${date}</p>`;
-                item.onclick = () => {
+                // Only show compare button if it's not the current version
+                const isCurrentVersion = v.version === latestVersion.version;
+                const compareButton = isCurrentVersion ? '' : `
+                    <button class="compare-btn text-purple-400 hover:text-purple-300 w-8 h-8 rounded border border-purple-500/30 hover:border-purple-400/50 transition-colors flex items-center justify-center" 
+                            data-version="${v.version}" title="Compare with current version">
+                        <i class="fas fa-code-compare text-xs"></i>
+                    </button>
+                `;
+
+                item.innerHTML = `
+                    <div class="flex justify-between items-center p-2 hover:bg-gray-700 transition-colors">
+                        <div class="flex-1 cursor-pointer version-select" data-version="${v.version}">
+                            <div class="flex items-center gap-2">
+                                <p class="${versionClass} menu-dropdown-item">${displayVersion}</p>
+                                ${notesDisplay}
+                            </div>
+                            <p class="text-xs text-gray-500 mt-1">${date}</p>
+                        </div>
+                        <div class="flex gap-2 ml-3">
+                            ${compareButton}
+                        </div>
+                    </div>
+                `;
+                
+                // Add event listeners
+                const versionSelect = item.querySelector('.version-select');
+                versionSelect.onclick = () => {
                     versionDropdown.style.display = 'none';
                     if (v.version !== latestVersion.version) {
                         loadSong(currentSongKey, v.version);
                     }
                 };
+
+                const compareBtn = item.querySelector('.compare-btn');
+                if (compareBtn) {
+                    compareBtn.onclick = (e) => {
+                        e.stopPropagation();
+                        showVersionComparison(latestVersion.version, v.version);
+                    };
+                }
+
                 versionDropdown.appendChild(item);
             });
+        }
+
+        function showVersionComparison(currentVersionStr, compareVersionStr) {
+            const song = allSongs[currentSongKey];
+            const currentVersion = song.versions.find(v => v.version === currentVersionStr);
+            const compareVersion = song.versions.find(v => v.version === compareVersionStr);
+
+            if (!currentVersion || !compareVersion) {
+                alert('Error: Could not find version data for comparison');
+                return;
+            }
+
+            // Create comparison modal
+            const modal = document.createElement('div');
+            modal.className = 'fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4';
+            modal.innerHTML = `
+                <div class="bg-gray-800 rounded-xl p-6 max-w-6xl w-full max-h-[90vh] overflow-y-auto">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-2xl font-bold text-white">Version Comparison</h2>
+                        <button class="close-modal text-gray-400 hover:text-white text-2xl">&times;</button>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-6">
+                        <!-- Current Version -->
+                        <div class="bg-gray-700 rounded-lg p-4">
+                            <h3 class="text-lg font-bold text-purple-400 mb-3">Current: ${formatVersionString(currentVersionStr)}</h3>
+                            <div class="text-sm text-gray-300 mb-4">
+                                Created: ${new Date(currentVersion.creationDate).toLocaleString()}
+                            </div>
+                            <div class="mb-4">
+                                <h4 class="font-semibold text-white mb-2">Lyrics:</h4>
+                                <div class="bg-gray-800 rounded p-3 text-sm text-gray-200 max-h-60 overflow-y-auto">
+                                    ${currentVersion.lyrics.join('\\n\\n').replace(/\n/g, '<br>')}
+                                </div>
+                            </div>
+                            <div class="mb-4">
+                                <h4 class="font-semibold text-white mb-2">Style:</h4>
+                                <div class="bg-gray-800 rounded p-3 text-sm text-gray-200">
+                                    ${currentVersion.style || 'No style description'}
+                                </div>
+                            </div>
+                            <div>
+                                <h4 class="font-semibold text-white mb-2">Notes:</h4>
+                                <div class="bg-gray-800 rounded p-3 text-sm text-gray-200">
+                                    ${currentVersion.notes || 'No notes'}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Compare Version -->
+                        <div class="bg-gray-700 rounded-lg p-4">
+                            <h3 class="text-lg font-bold text-green-400 mb-3">Compare: ${formatVersionString(compareVersionStr)}</h3>
+                            <div class="text-sm text-gray-300 mb-4">
+                                Created: ${new Date(compareVersion.creationDate).toLocaleString()}
+                            </div>
+                            <div class="mb-4">
+                                <h4 class="font-semibold text-white mb-2">Lyrics:</h4>
+                                <div class="bg-gray-800 rounded p-3 text-sm text-gray-200 max-h-60 overflow-y-auto">
+                                    ${compareVersion.lyrics.join('\\n\\n').replace(/\n/g, '<br>')}
+                                </div>
+                            </div>
+                            <div class="mb-4">
+                                <h4 class="font-semibold text-white mb-2">Style:</h4>
+                                <div class="bg-gray-800 rounded p-3 text-sm text-gray-200">
+                                    ${compareVersion.style || 'No style description'}
+                                </div>
+                            </div>
+                            <div>
+                                <h4 class="font-semibold text-white mb-2">Notes:</h4>
+                                <div class="bg-gray-800 rounded p-3 text-sm text-gray-200">
+                                    ${compareVersion.notes || 'No notes'}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-center gap-4 mt-6">
+                        <button class="load-version bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded-lg transition-colors" 
+                                data-version="${compareVersionStr}">
+                            Load ${formatVersionString(compareVersionStr)}
+                        </button>
+                        <button class="close-modal bg-gray-600 hover:bg-gray-700 text-white px-6 py-2 rounded-lg transition-colors">
+                            Close
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            // Add event listeners
+            modal.querySelector('.close-modal').onclick = () => {
+                modal.remove();
+            };
+            
+            modal.querySelector('.load-version').onclick = () => {
+                modal.remove();
+                versionDropdown.style.display = 'none';
+                loadSong(currentSongKey, compareVersionStr);
+            };
+
+            // Close on backdrop click
+            modal.onclick = (e) => {
+                if (e.target === modal) {
+                    modal.remove();
+                }
+            };
+
+            document.body.appendChild(modal);
         }
 
         function exportCurrentSong() {
