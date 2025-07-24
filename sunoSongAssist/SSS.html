@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,50 +9,266 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        body { font-family: 'Inter', sans-serif; }
-        .editor-font { font-family: 'Roboto Mono', monospace; line-height: 1.6; font-size: 1em; }
-        .jukebox-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1.5rem; }
-        .lyrics-section-bubble { padding: 12px; margin-bottom: 10px; border-radius: 8px; transition: all 0.3s ease; cursor: grab; border: 2px solid transparent; }
-        .unsectioned-bubble { border-style: dashed; border-color: #FBBF24; }
-        .empty-bubble { border-style: dashed; border-color: #4B5563; }
-        .lyrics-section-bubble:active { cursor: grabbing; }
-        .lyrics-section-bubble.dragging { opacity: 0.5; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.3); }
-        .lyrics-section-bubble textarea { width: 100%; background: transparent; border: none; color: white; resize: none; outline: none; overflow-y: hidden; }
-        .fab { transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out; }
-        .fab:hover { transform: scale(1.05); }
-        .menu-dropdown { display: none; position: absolute; background-color: #2d3748; min-width: 200px; box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2); z-index: 10; border-radius: 8px; border: 1px solid #4a5568; right: 0; margin-top: 4px; }
-        .menu-dropdown-item { padding: 12px 16px; cursor: pointer; }
-        .menu-dropdown-item:hover { background-color: #4a5568; }
-        .version-dropdown-content { max-height: 400px; overflow-y: auto; }
-        .version-notes { font-size: 0.85em; color: #a0aec0; white-space: normal; }
-        .draft-version { color: #9CA3AF; }
-        #song-title[contenteditable]:focus { outline: 2px dashed #a78bfa; border-radius: 4px; }
-        .switch-btn { padding: 6px; border-radius: 9999px; transition: background-color 0.2s ease; }
-        .switch-btn.active { background-color: #581c87; }
-        .spinning-record { animation: spin 4s linear infinite; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0f0f23 0%, #1a1a3a 50%, #0f0f23 100%);
+            min-height: 100vh;
+        }
+
+        .editor-font {
+            font-family: 'Roboto Mono', monospace;
+            line-height: 1.6;
+            font-size: 1em;
+        }
+
+        .jukebox-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 2rem;
+            padding: 2rem 0;
+        }
+
+        .lyrics-section-bubble {
+            padding: 16px;
+            margin-bottom: 12px;
+            border-radius: 12px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: grab;
+            border: 2px solid transparent;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .unsectioned-bubble {
+            border-style: dashed;
+            border-color: #F59E0B;
+            background: rgba(245, 158, 11, 0.05);
+        }
+
+        .empty-bubble {
+            border-style: dashed;
+            border-color: #6B7280;
+            background: rgba(107, 114, 128, 0.05);
+        }
+
+        .lyrics-section-bubble:active {
+            cursor: grabbing;
+        }
+
+        .lyrics-section-bubble.dragging {
+            opacity: 0.7;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+            transform: rotate(2deg) scale(1.02);
+        }
+
+        .lyrics-section-bubble textarea {
+            width: 100%;
+            background: transparent;
+            border: none;
+            color: white;
+            resize: none;
+            outline: none;
+            overflow-y: hidden;
+        }
+
+        .fab {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            filter: drop-shadow(0 10px 25px rgba(168, 85, 247, 0.3));
+        }
+
+        .fab:hover {
+            transform: scale(1.1) rotate(5deg);
+            filter: drop-shadow(0 15px 35px rgba(168, 85, 247, 0.5));
+        }
+
+        .fab:hover .record-arm {
+            transform: rotate(-35deg);
+        }
+
+        .fab:hover .plus-sign {
+            transform: translate(35px, 20px);
+        }
+
+        .record-arm {
+            transition: transform 0.3s ease;
+            transform-origin: 80px 15px;
+        }
+
+        .plus-sign {
+            transition: transform 0.3s ease;
+        }
+
+        .menu-dropdown {
+            display: none;
+            position: absolute;
+            background: rgba(45, 55, 72, 0.95);
+            backdrop-filter: blur(20px);
+            min-width: 220px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            z-index: 10;
+            border-radius: 16px;
+            border: 1px solid rgba(168, 85, 247, 0.2);
+            right: 0;
+            margin-top: 8px;
+        }
+
+        .menu-dropdown-item {
+            padding: 14px 18px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border-radius: 12px;
+            margin: 4px;
+        }
+
+        .menu-dropdown-item:hover {
+            background: rgba(168, 85, 247, 0.2);
+            transform: translateX(4px);
+        }
+
+        .version-dropdown-content {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .version-notes {
+            font-size: 0.85em;
+            color: #a0aec0;
+            white-space: normal;
+        }
+
+        .draft-version {
+            color: #9CA3AF;
+        }
+
+        #song-title[contenteditable]:focus {
+            outline: 2px dashed #a78bfa;
+            border-radius: 8px;
+            background: rgba(168, 85, 247, 0.1);
+            padding: 4px 8px;
+        }
+
+        .switch-btn {
+            padding: 8px 12px;
+            border-radius: 12px;
+            transition: all 0.2s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .switch-btn.active {
+            background: linear-gradient(135deg, #7c3aed, #a855f7);
+            box-shadow: 0 4px 15px rgba(168, 85, 247, 0.4);
+        }
+
+        .spinning-record {
+            animation: spin 4s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* New card hover effects */
+        .song-card {
+            background: linear-gradient(135deg, rgba(30, 41, 59, 0.8), rgba(51, 65, 85, 0.6));
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(168, 85, 247, 0.1);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transform: translateY(0);
+        }
+
+        .song-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 40px rgba(168, 85, 247, 0.2);
+            border-color: rgba(168, 85, 247, 0.3);
+            background: linear-gradient(135deg, rgba(30, 41, 59, 0.9), rgba(51, 65, 85, 0.8));
+        }
+
+        /* Enhanced navigation */
+        .nav-glass {
+            background: rgba(17, 24, 39, 0.8);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(168, 85, 247, 0.1);
+        }
+
+        /* Improved input styling */
+        .glass-input {
+            background: rgba(31, 41, 55, 0.6);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(168, 85, 247, 0.2);
+            transition: all 0.2s ease;
+        }
+
+        .glass-input:focus {
+            border-color: rgba(168, 85, 247, 0.5);
+            box-shadow: 0 0 20px rgba(168, 85, 247, 0.2);
+        }
+
+        /* Improved button styling */
+        .btn-primary {
+            background: linear-gradient(135deg, #7c3aed, #a855f7);
+            box-shadow: 0 4px 15px rgba(168, 85, 247, 0.3);
+            transition: all 0.2s ease;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(168, 85, 247, 0.4);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #059669, #10b981);
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+            transition: all 0.2s ease;
+        }
+
+        .btn-secondary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(16, 185, 129, 0.4);
+        }
     </style>
 </head>
-<body class="bg-gray-900 text-white">
 
-    <nav class="sticky top-0 z-20 bg-gray-900/80 backdrop-blur-md shadow-lg">
+<body class="text-white min-h-screen">
+
+    <nav class="sticky top-0 z-20 nav-glass shadow-lg">
         <div class="container mx-auto flex justify-between items-center p-4">
-            <div class="text-2xl font-bold text-purple-400">SunoSongsSistent</div>
+            <div class="text-2xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+                ✨ SunoSongsSistent
+            </div>
             <div class="flex items-center gap-4">
                 <div class="relative">
-                    <button id="file-menu-btn" class="text-gray-400 hover:text-white transition-colors">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" /></svg>
+                    <button id="file-menu-btn" class="text-gray-400 hover:text-white transition-colors"
+                        title="File Menu">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                        </svg>
                     </button>
                     <div id="file-menu-dropdown" class="menu-dropdown">
                         <label for="song-importer" class="menu-dropdown-item block">Import Song (.json)</label>
                         <input type="file" id="song-importer" class="hidden" accept=".json">
-                        <button id="export-song-btn" class="menu-dropdown-item w-full text-left" disabled>Export Current Song</button>
+                        <button id="export-song-btn" class="menu-dropdown-item w-full text-left" disabled>Export Current
+                            Song</button>
                     </div>
                 </div>
                 <div class="relative">
-                    <button id="settings-btn" class="text-gray-400 hover:text-white transition-colors">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                    <button id="settings-btn" class="text-gray-400 hover:text-white transition-colors" title="Settings">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
                     </button>
                 </div>
             </div>
@@ -61,19 +278,36 @@
     <div id="app" class="p-4 sm:p-6 lg:p-8">
         <div id="jukebox-view" class="relative">
             <div id="jukebox-grid" class="jukebox-grid"></div>
-            <button id="create-new-song-fab" class="fab fixed bottom-8 left-8 w-20 h-20 rounded-full shadow-lg flex items-center justify-center">
+            <button id="create-new-song-fab"
+                class="fab fixed bottom-8 left-8 w-20 h-20 rounded-full shadow-lg flex items-center justify-center bg-gradient-to-br from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 transition-all duration-300"
+                title="Create New Song">
                 <svg class="w-full h-full" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                    <!-- Spinning gradient background record -->
                     <g class="spinning-record" transform-origin="50 50">
-                        <circle cx="50" cy="50" r="48" fill="#111827" stroke="#374151" stroke-width="2"/>
-                        <circle cx="50" cy="50" r="42" fill="none" stroke="url(#sheen)" stroke-width="1.5"/>
-                        <circle cx="50" cy="50" r="36" fill="none" stroke="#222222" stroke-width="1.5"/>
-                        <circle cx="50" cy="50" r="30" fill="none" stroke="#2a2a2a" stroke-width="1.5"/>
-                        <circle cx="50" cy="50" r="20" fill="url(#labelGradient)" />
+                        <circle cx="50" cy="50" r="48" fill="#111827" stroke="#374151" stroke-width="2" />
+                        <circle cx="50" cy="50" r="42" fill="none" stroke="url(#sheen)" stroke-width="1.5" />
+                        <circle cx="50" cy="50" r="36" fill="none" stroke="#222222" stroke-width="1.5" />
+                        <circle cx="50" cy="50" r="30" fill="none" stroke="#2a2a2a" stroke-width="1.5" />
+                        <circle cx="50" cy="50" r="20" fill="url(#spinningLabelGradient)" />
                         <circle cx="50" cy="50" r="5" fill="#111827" />
                     </g>
-                    <g transform="scale(1.5)" transform-origin="50 50">
-                       <path d="M 50 42 V 58 M 42 50 H 58" stroke="white" stroke-width="3" stroke-linecap="round"/>
+
+                    <!-- Static record player arm (moved outside record, bigger) -->
+                    <g class="record-arm">
+                        <!-- Arm base/pivot -->
+                        <circle cx="80" cy="15" r="4" fill="#4a5568" stroke="#718096" stroke-width="1.5" />
+                        <!-- Arm shaft (bigger and longer) -->
+                        <line x1="80" y1="15" x2="50" y2="50" stroke="#4a5568" stroke-width="4"
+                            stroke-linecap="round" />
+                        <!-- Arm head (where plus will be) -->
+                        <circle cx="50" cy="50" r="10" fill="none" stroke="#4a5568" stroke-width="2" opacity="0.7" />
                     </g>
+
+                    <!-- Static plus sign (centered and larger) -->
+                    <g class="plus-sign">
+                        <path d="M 50 35 V 65 M 35 50 H 65" stroke="white" stroke-width="5" stroke-linecap="round" />
+                    </g>
+
                     <defs>
                         <linearGradient id="sheen" x1="0%" y1="0%" x2="100%" y2="100%">
                             <stop offset="0%" style="stop-color:#555;stop-opacity:1" />
@@ -82,10 +316,13 @@
                             <stop offset="75%" style="stop-color:#2a2a2a;stop-opacity:1" />
                             <stop offset="100%" style="stop-color:#555;stop-opacity:1" />
                         </linearGradient>
-                         <radialGradient id="labelGradient" cx="50%" cy="50%" r="50%" fx="50%" fy="50%">
+                        <linearGradient id="spinningLabelGradient" x1="0%" y1="0%" x2="100%" y2="100%">
                             <stop offset="0%" style="stop-color:#c084fc;stop-opacity:1" />
-                            <stop offset="100%" style="stop-color:#a855f7;stop-opacity:1" />
-                        </radialGradient>
+                            <stop offset="25%" style="stop-color:#a855f7;stop-opacity:1" />
+                            <stop offset="50%" style="stop-color:#7c3aed;stop-opacity:1" />
+                            <stop offset="75%" style="stop-color:#6366f1;stop-opacity:1" />
+                            <stop offset="100%" style="stop-color:#c084fc;stop-opacity:1" />
+                        </linearGradient>
                     </defs>
                 </svg>
             </button>
@@ -98,11 +335,19 @@
                     <h1 id="song-title" class="text-4xl font-bold" contenteditable="true"></h1>
                 </div>
                 <div class="flex items-center gap-4">
-                    <div id="auto-save-status" class="text-sm text-gray-400 transition-opacity duration-500 opacity-0"></div>
+                    <div id="auto-save-status" class="text-sm text-gray-400 transition-opacity duration-500 opacity-0">
+                    </div>
                     <div class="relative inline-block text-left">
-                        <button type="button" id="version-picker-btn" class="inline-flex justify-center w-full rounded-md border border-gray-600 shadow-sm px-4 py-2 bg-gray-700 text-sm font-medium text-white hover:bg-gray-600 focus:outline-none">
-                            Version: <span id="version-display" class="ml-2 font-bold"></span>
-                            <svg class="-mr-1 ml-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
+                        <button type="button" id="version-picker-btn"
+                            class="inline-flex justify-center w-full rounded-xl border border-purple-500/30 shadow-lg px-6 py-3 glass-input text-sm font-medium text-white hover:border-purple-400/50 focus:outline-none transition-all duration-200">
+                            Version: <span id="version-display"
+                                class="ml-2 font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent"></span>
+                            <svg class="-mr-1 ml-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
+                                fill="currentColor">
+                                <path fill-rule="evenodd"
+                                    d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                                    clip-rule="evenodd" />
+                            </svg>
                         </button>
                         <div id="version-dropdown" class="menu-dropdown version-dropdown-content"></div>
                     </div>
@@ -114,27 +359,27 @@
                 <div class="relative">
                     <div class="flex justify-between items-center mb-4">
                         <h2 class="text-2xl font-semibold text-purple-300">Lyrics</h2>
-                        <div class="bg-gray-700 p-1 rounded-full text-sm flex items-center">
+                        <div class="glass-input p-1 rounded-xl text-sm flex items-center border border-purple-500/20">
                             <button id="bubbles-view-btn" class="switch-btn active" title="Bubble View">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="currentColor" viewBox="0 0 16 16">
-                                    <path d="M5 3a1 1 0 0 0-1 1v2a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4a1 1 0 0 0-1-1H5zm0 5a1 1 0 0 0-1 1v2a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1H5z"/>
-                                    <path d="M12 3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h8zm0 1H4v10h8V4z"/>
-                                    <path d="M11.5 6.5A1.5 1.5 0 0 1 13 8V4.5A1.5 1.5 0 0 0 11.5 3H11v1h.5a.5.5 0 0 1 .5.5V6.5z"/>
-                                </svg>
+                                <i class="fas fa-wand-magic-sparkles text-base"></i>
                             </button>
                             <button id="text-view-btn" class="switch-btn" title="Text View">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="currentColor" viewBox="0 0 16 16">
-                                    <path d="M2 4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V4zm0 5a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V9z"/>
-                                </svg>
+                                <span class="font-mono font-bold text-sm">Aa</span>
                             </button>
                         </div>
                     </div>
-                    <div id="lyrics-editor-container" class="bg-gray-800 p-4 rounded-lg h-[60vh] overflow-y-auto"></div>
-                    <textarea id="plain-text-editor" class="bg-gray-800 p-4 rounded-lg h-[60vh] w-full editor-font text-white hidden resize-none outline-none"></textarea>
-                    <div class="absolute bottom-6 right-6 flex items-center gap-2 bg-gray-900/70 backdrop-blur-sm border border-gray-600 rounded-full p-1 shadow-lg">
+                    <div id="lyrics-editor-container"
+                        class="glass-input p-6 rounded-xl h-[60vh] overflow-y-auto border-0"></div>
+                    <textarea id="plain-text-editor"
+                        class="glass-input p-6 rounded-xl h-[60vh] w-full editor-font text-white hidden resize-none outline-none border-0"
+                        placeholder="Write your lyrics here..."></textarea>
+                    <div
+                        class="absolute bottom-6 right-6 flex items-center gap-3 bg-black/20 backdrop-blur-xl border border-white/10 rounded-2xl p-2 shadow-2xl">
                         <span class="text-sm text-gray-300 pl-4 pr-2">Save as...</span>
-                        <button id="create-version-btn" class="fab bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-5 rounded-full">Version</button>
-                        <button id="save-draft-btn" class="fab bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-5 rounded-full">Draft</button>
+                        <button id="create-version-btn"
+                            class="fab btn-secondary text-white font-bold py-3 px-6 rounded-xl">✨ Version</button>
+                        <button id="save-draft-btn" class="fab btn-primary text-white font-bold py-3 px-6 rounded-xl">💾
+                            Draft</button>
                     </div>
                 </div>
 
@@ -142,24 +387,32 @@
                 <div>
                     <div class="mb-6">
                         <h2 class="text-2xl font-semibold mb-4 text-purple-300">Style</h2>
-                        <div class="bg-gray-800 p-4 rounded-lg"><textarea id="style-textarea" class="w-full h-24 bg-transparent text-gray-200 resize-none outline-none"></textarea></div>
+                        <div class="glass-input p-4 rounded-xl"><textarea id="style-textarea"
+                                class="w-full h-24 bg-transparent text-gray-200 resize-none outline-none border-0"
+                                placeholder="Describe the musical style..."></textarea></div>
                     </div>
                     <div class="mb-6">
                         <h2 class="text-2xl font-semibold mb-4 text-purple-300">Links</h2>
-                        <div class="bg-gray-800 p-4 rounded-lg">
+                        <div class="glass-input p-4 rounded-xl">
                             <div id="links-list"></div>
-                            <div class="flex mt-2"><input type="text" id="new-link-input" placeholder="Add a new link" class="flex-grow bg-gray-700 rounded-l-md p-2 outline-none"><button id="add-link-button" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-r-md">Add</button></div>
+                            <div class="flex mt-2"><input type="text" id="new-link-input" placeholder="Add a new link"
+                                    class="flex-grow glass-input rounded-l-xl p-3 outline-none border-0"><button
+                                    id="add-link-button"
+                                    class="btn-primary text-white font-bold py-3 px-6 rounded-r-xl border-0">Add</button>
+                            </div>
                         </div>
                     </div>
                     <div class="mb-6">
                         <h2 class="text-2xl font-semibold mb-4 text-purple-300">Notes</h2>
-                        <div class="bg-gray-800 p-4 rounded-lg"><textarea id="notes-textarea" class="w-full h-24 bg-transparent text-gray-200 resize-none outline-none"></textarea></div>
+                        <div class="glass-input p-4 rounded-xl"><textarea id="notes-textarea"
+                                class="w-full h-24 bg-transparent text-gray-200 resize-none outline-none border-0"
+                                placeholder="Add your notes here..."></textarea></div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-    
+
     <script>
         // --- DB HELPER ---
         const DB_NAME = 'SunoSongsDB';
@@ -191,9 +444,9 @@
                 request.onerror = () => reject("Error saving song");
             });
         }
-        
+
         function deleteSongFromDB(songKey) {
-             return new Promise((resolve, reject) => {
+            return new Promise((resolve, reject) => {
                 const transaction = db.transaction([STORE_NAME], 'readwrite');
                 const store = transaction.objectStore(STORE_NAME);
                 const request = store.delete(songKey);
@@ -301,10 +554,16 @@
             exportSongBtn.addEventListener('click', exportCurrentSong);
             songTitle.addEventListener('blur', renameSong);
             bubblesViewBtn.addEventListener('click', () => switchToBubbleView());
-            textViewBtn.addEventListener('click', switchToTextView);
+            textViewBtn.addEventListener('click', () => switchToTextView());
 
-            [styleTextarea, notesTextarea, newLinkInput].forEach(el => el.addEventListener('input', () => isDirty = true));
-            
+            [styleTextarea, notesTextarea, newLinkInput, plainTextEditor].forEach(el => el.addEventListener('input', () => isDirty = true));
+
+            // Auto-resize plain text editor
+            plainTextEditor.addEventListener('input', (e) => {
+                e.target.style.height = 'auto';
+                e.target.style.height = e.target.scrollHeight + 'px';
+            });
+
             lyricsEditorContainer.addEventListener('dragover', e => {
                 e.preventDefault();
                 const draggingElement = document.querySelector('.dragging');
@@ -326,20 +585,24 @@
         // --- View Management ---
         function showJukeboxView() {
             exportSongBtn.disabled = true;
-            gsap.to(songUiView, { opacity: 0, duration: 0.3, onComplete: () => {
-                songUiView.classList.add('hidden');
-                jukeboxView.classList.remove('hidden');
-                gsap.fromTo(jukeboxView, { opacity: 0 }, { opacity: 1, duration: 0.3 });
-                renderJukebox();
-            }});
+            gsap.to(songUiView, {
+                opacity: 0, duration: 0.3, onComplete: () => {
+                    songUiView.classList.add('hidden');
+                    jukeboxView.classList.remove('hidden');
+                    gsap.fromTo(jukeboxView, { opacity: 0 }, { opacity: 1, duration: 0.3 });
+                    renderJukebox();
+                }
+            });
         }
         function showSongUiView(onCompleteCallback) {
             exportSongBtn.disabled = false;
-            gsap.to(jukeboxView, { opacity: 0, duration: 0.3, onComplete: () => {
-                jukeboxView.classList.add('hidden');
-                songUiView.classList.remove('hidden');
-                gsap.fromTo(songUiView, { opacity: 0 }, { opacity: 1, duration: 0.3, onComplete: onCompleteCallback });
-            }});
+            gsap.to(jukeboxView, {
+                opacity: 0, duration: 0.3, onComplete: () => {
+                    jukeboxView.classList.add('hidden');
+                    songUiView.classList.remove('hidden');
+                    gsap.fromTo(songUiView, { opacity: 0 }, { opacity: 1, duration: 0.3, onComplete: onCompleteCallback });
+                }
+            });
         }
 
         // --- Jukebox Logic ---
@@ -348,8 +611,8 @@
             Object.values(allSongs).forEach(song => {
                 const latestVersion = song.versions[song.versions.length - 1];
                 const card = document.createElement('div');
-                card.className = "bg-gray-800 p-4 rounded-lg cursor-pointer hover:bg-gray-700";
-                
+                card.className = "song-card p-6 rounded-xl cursor-pointer transition-all duration-300";
+
                 const displayVersion = formatVersionString(latestVersion.version);
                 const lastUpdated = new Date(latestVersion.creationDate).toLocaleString([], {
                     year: 'numeric', month: 'numeric', day: 'numeric',
@@ -357,8 +620,17 @@
                 });
 
                 card.innerHTML = `
-                    <h2 class="text-xl font-bold text-purple-300">${song.songName} <span class="text-base text-gray-400 font-normal">${displayVersion}</span></h2>
-                    <p class="text-xs text-gray-500 mt-1">Last updated: ${lastUpdated}</p>
+                    <div class="flex items-start justify-between mb-3">
+                        <h2 class="text-xl font-bold text-white flex-1">${song.songName}</h2>
+                        <span class="text-sm bg-gradient-to-r from-purple-500 to-pink-500 text-white px-3 py-1 rounded-full font-medium">${displayVersion}</span>
+                    </div>
+                    <p class="text-xs text-gray-400 flex items-center">
+                        <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"/>
+                        </svg>
+                        ${lastUpdated}
+                    </p>
+                    <div class="mt-4 h-1 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full opacity-60"></div>
                 `;
                 card.addEventListener('click', () => loadSong(song.songKey, latestVersion.version));
                 jukeboxGrid.appendChild(card);
@@ -388,9 +660,9 @@
             songTitle.textContent = song.songName;
             styleTextarea.value = version.style || '';
             notesTextarea.value = version.notes || '';
-            
-            lyricsEditorContainer.innerHTML = ''; 
-            
+
+            lyricsEditorContainer.innerHTML = '';
+
             populateVersionPicker();
             renderLinks(version.links || []);
 
@@ -441,7 +713,7 @@
 
             const oldKey = currentSongKey;
             const songData = allSongs[oldKey];
-            
+
             songData.songKey = newKey;
             songData.songName = newName;
             allSongs[newKey] = songData;
@@ -461,7 +733,19 @@
             textViewBtn.classList.remove('active');
             lyricsEditorContainer.classList.remove('hidden');
             plainTextEditor.classList.add('hidden');
-            const lyricsArray = lyrics || plainTextEditor.value.split(/\n\s*\n/);
+
+            // Convert from text view if switching from text mode
+            let lyricsArray;
+            if (lyrics) {
+                lyricsArray = lyrics;
+            } else if (plainTextEditor.value.trim()) {
+                // Convert text editor content to bubbles
+                lyricsArray = plainTextEditor.value.split(/\n\s*\n/).filter(section => section.trim());
+            } else {
+                // Get current bubble content
+                lyricsArray = getLyricsAsArray();
+            }
+
             renderLyricsBubbles(lyricsArray);
         }
 
@@ -471,24 +755,31 @@
             bubblesViewBtn.classList.remove('active');
             plainTextEditor.classList.remove('hidden');
             lyricsEditorContainer.classList.add('hidden');
-            plainTextEditor.value = getLyricsAsArray().join('\n\n');
+
+            // Convert from bubble view to text
+            const lyricsArray = getLyricsAsArray();
+            plainTextEditor.value = lyricsArray.filter(section => section.trim()).join('\n\n');
+
+            // Auto-resize the textarea
+            plainTextEditor.style.height = 'auto';
+            plainTextEditor.style.height = plainTextEditor.scrollHeight + 'px';
         }
 
         function createBubbleElement(sectionText) {
             const bubble = document.createElement('div');
             bubble.draggable = true;
             bubble.className = 'lyrics-section-bubble';
-            
+
             const textarea = document.createElement('textarea');
             textarea.value = sectionText;
             textarea.className = 'editor-font';
-            
+
             bubble.appendChild(textarea);
             updateBubbleStyle(bubble);
 
             bubble.addEventListener('dragstart', () => bubble.classList.add('dragging'));
             bubble.addEventListener('dragend', () => bubble.classList.remove('dragging'));
-            
+
             textarea.addEventListener('input', (e) => {
                 isDirty = true;
                 autoResizeTextarea(e);
@@ -507,7 +798,7 @@
             const firstLine = text.split('\n')[0].trim();
 
             bubble.classList.remove('unsectioned-bubble', 'empty-bubble');
-            
+
             if (text.trim() === '') {
                 bubble.classList.add('empty-bubble');
                 bubble.style.backgroundColor = 'transparent';
@@ -522,7 +813,7 @@
 
         function renderLyricsBubbles(lyricsArray) {
             lyricsEditorContainer.innerHTML = '';
-            
+
             if (typeof lyricsArray === 'string') {
                 lyricsArray = lyricsArray.split(/\n\s*\n/);
             }
@@ -530,10 +821,10 @@
             lyricsArray.forEach(sectionText => {
                 lyricsEditorContainer.appendChild(createBubbleElement(sectionText));
             });
-            
+
             const lastBubble = lyricsEditorContainer.lastElementChild;
             if (!lastBubble || lastBubble.querySelector('textarea').value.trim() !== '') {
-                 lyricsEditorContainer.appendChild(createBubbleElement(''));
+                lyricsEditorContainer.appendChild(createBubbleElement(''));
             }
 
             lyricsEditorContainer.querySelectorAll('textarea').forEach(textarea => {
@@ -570,7 +861,7 @@
                 lyricsEditorContainer.appendChild(createBubbleElement(''));
             }
         }
-        
+
         function handleTabText(event) {
             if (event.key === 'Tab') {
                 event.preventDefault();
@@ -593,7 +884,7 @@
                 }
             }, { offset: Number.NEGATIVE_INFINITY }).element;
         }
-        
+
         function getSectionColor(sectionId) {
             const baseColors = ['#4A235A', '#154360', '#145A32', '#6E2C00', '#5B2C6F', '#0E6251', '#78281F', '#424949'];
             let hash = 0;
@@ -607,7 +898,7 @@
 
             const song = allSongs[currentSongKey];
             const latestVersion = song.versions[song.versions.length - 1];
-            
+
             const [mainVersion, draftVersion] = latestVersion.version.split('.');
             const nextDraftNum = draftVersion ? parseInt(draftVersion) + 1 : 1;
             const newVersionString = `${mainVersion}.${nextDraftNum}`;
@@ -624,16 +915,16 @@
             song.versions.push(newDraft);
             await saveSongToDB(song);
             isDirty = false;
-            
+
             if (isManual) {
                 showSaveStatus("Draft saved!");
             } else {
                 showSaveStatus(`Auto-saved at ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`);
             }
-            
+
             loadSong(currentSongKey, newVersionString);
         }
-        
+
         async function createVersion() {
             clearInterval(autoSaveInterval);
             const song = allSongs[currentSongKey];
@@ -642,7 +933,7 @@
             const newVersionNum = (mainVersion + 1).toString().padStart(5, '0');
 
             const newVersion = {
-                 version: newVersionNum,
+                version: newVersionNum,
                 creationDate: new Date().toISOString(),
                 lyrics: getLyricsAsArray(),
                 style: styleTextarea.value,
@@ -659,11 +950,13 @@
 
         function showSaveStatus(message) {
             autoSaveStatus.textContent = message;
-            gsap.to(autoSaveStatus, { opacity: 1, duration: 0.5, onComplete: () => {
-                gsap.to(autoSaveStatus, { opacity: 0, duration: 0.5, delay: 2 });
-            }});
+            gsap.to(autoSaveStatus, {
+                opacity: 1, duration: 0.5, onComplete: () => {
+                    gsap.to(autoSaveStatus, { opacity: 0, duration: 0.5, delay: 2 });
+                }
+            });
         }
-        
+
         function formatVersionString(version) {
             if (version.includes('.')) {
                 const parts = version.split('.');
@@ -678,7 +971,7 @@
             const latestVersion = song.versions[song.versions.length - 1];
             versionDisplay.textContent = formatVersionString(latestVersion.version);
             versionDropdown.innerHTML = '';
-            
+
             song.versions.slice().reverse().forEach(v => {
                 const item = document.createElement('div');
                 item.style.cursor = 'pointer';
@@ -687,7 +980,7 @@
                     hour: '2-digit', minute: '2-digit', hour12: false
                 });
                 let versionClass = v.version.includes('.') ? 'draft-version' : 'font-bold';
-                
+
                 item.innerHTML = `<p class="${versionClass} menu-dropdown-item">Version ${v.version}</p><p class="version-notes">${v.notes}</p><p class="text-xs text-gray-500 mt-1">${date}</p>`;
                 item.onclick = () => {
                     versionDropdown.style.display = 'none';
@@ -704,7 +997,7 @@
             const songData = allSongs[currentSongKey];
             const fileName = `${songData.songKey}.json`;
             const fileContent = JSON.stringify(songData, null, 2);
-            
+
             const a = document.createElement("a");
             const file = new Blob([fileContent], { type: 'application/json' });
             a.href = URL.createObjectURL(file);
@@ -722,8 +1015,8 @@
             }
             links.forEach((link, index) => {
                 const linkEl = document.createElement('div');
-                linkEl.className = 'flex justify-between items-center bg-gray-700 p-2 rounded-md mb-2';
-                linkEl.innerHTML = `<a href="${link}" target="_blank" class="text-purple-400 hover:underline truncate">${link}</a><button data-index="${index}" class="remove-link-btn text-red-500 hover:text-red-400 font-bold text-xl">&times;</button>`;
+                linkEl.className = 'flex justify-between items-center glass-input p-3 rounded-xl mb-3 border border-purple-500/20 hover:border-purple-400/40 transition-all duration-200';
+                linkEl.innerHTML = `<a href="${link}" target="_blank" class="text-purple-400 hover:text-purple-300 underline truncate transition-colors duration-200">${link}</a><button data-index="${index}" class="remove-link-btn text-red-400 hover:text-red-300 font-bold text-xl transition-colors duration-200">&times;</button>`;
                 linksList.appendChild(linkEl);
             });
             document.querySelectorAll('.remove-link-btn').forEach(btn => btn.addEventListener('click', (e) => removeLink(e.target.dataset.index)));
@@ -748,4 +1041,5 @@
         }
     </script>
 </body>
+
 </html>
