@@ -737,13 +737,19 @@
             // Convert from text view if switching from text mode
             let lyricsArray;
             if (lyrics) {
+                // Loading from saved data
                 lyricsArray = lyrics;
             } else if (plainTextEditor.value.trim()) {
                 // Convert text editor content to bubbles
                 lyricsArray = plainTextEditor.value.split(/\n\s*\n/).filter(section => section.trim());
             } else {
-                // Get current bubble content
-                lyricsArray = getLyricsAsArray();
+                // Get current bubble content (fallback)
+                const sections = [];
+                const textareas = lyricsEditorContainer.querySelectorAll('.lyrics-section-bubble textarea');
+                textareas.forEach(textarea => {
+                    sections.push(textarea.value);
+                });
+                lyricsArray = sections;
             }
 
             renderLyricsBubbles(lyricsArray);
@@ -756,9 +762,19 @@
             plainTextEditor.classList.remove('hidden');
             lyricsEditorContainer.classList.add('hidden');
 
-            // Convert from bubble view to text
-            const lyricsArray = getLyricsAsArray();
-            plainTextEditor.value = lyricsArray.filter(section => section.trim()).join('\n\n');
+            // Convert from bubble view to text - directly get textarea values
+            const sections = [];
+            const textareas = lyricsEditorContainer.querySelectorAll('.lyrics-section-bubble textarea');
+            textareas.forEach(textarea => {
+                const value = textarea.value.trim();
+                if (value) {
+                    sections.push(value);
+                }
+            });
+
+            // Join sections with double newlines
+            const textContent = sections.join('\n\n');
+            plainTextEditor.value = textContent;
 
             // Auto-resize the textarea
             plainTextEditor.style.height = 'auto';
@@ -839,7 +855,8 @@
                 textareas.forEach(textarea => {
                     sections.push(textarea.value);
                 });
-                if (sections.length > 1 && sections[sections.length - 1].trim() === '') {
+                // Remove empty trailing sections
+                while (sections.length > 0 && sections[sections.length - 1].trim() === '') {
                     sections.pop();
                 }
                 return sections;
@@ -1030,6 +1047,7 @@
                 if (!latestVersion.links) latestVersion.links = [];
                 latestVersion.links.push(newLink);
                 renderLinks(latestVersion.links);
+                newLinkInput.value = ''; // Clear the input field
             }
         }
         function removeLink(index) {
