@@ -270,6 +270,19 @@
                                 d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                         </svg>
                     </button>
+                    <div id="settings-dropdown" class="menu-dropdown">
+                        <div class="menu-dropdown-item">
+                            <label class="block text-sm mb-2">Auto-save frequency</label>
+                            <select id="auto-save-frequency" class="w-full bg-gray-700 text-white rounded px-2 py-1 text-sm">
+                                <option value="0">Disabled</option>
+                                <option value="30000">30 seconds</option>
+                                <option value="60000">1 minute</option>
+                                <option value="120000">2 minutes</option>
+                                <option value="300000" selected>5 minutes</option>
+                                <option value="600000">10 minutes</option>
+                            </select>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -491,6 +504,9 @@
         const fileMenuBtn = document.getElementById('file-menu-btn');
         const fileMenuDropdown = document.getElementById('file-menu-dropdown');
         const exportSongBtn = document.getElementById('export-song-btn');
+        const settingsBtn = document.getElementById('settings-btn');
+        const settingsDropdown = document.getElementById('settings-dropdown');
+        const autoSaveFrequencySelect = document.getElementById('auto-save-frequency');
 
         // --- State ---
         let currentSongKey = null;
@@ -499,7 +515,12 @@
         let autoSaveInterval = null;
         let currentEditorMode = 'bubbles';
         let isDirty = false;
-        const AUTO_SAVE_TIME = 60000;
+        
+        // Settings
+        let settings = {
+            autoSaveFrequency: 300000, // 5 minutes in milliseconds (default)
+        };
+        const AUTO_SAVE_TIME = () => settings.autoSaveFrequency;
 
         // --- Sample Data ---
         const sampleSong = {
@@ -522,6 +543,7 @@
         // --- Initialization ---
         document.addEventListener('DOMContentLoaded', async () => {
             await openDB();
+            loadSettings();
             const songsFromDB = await getAllSongsFromDB();
             if (songsFromDB.length === 0) {
                 allSongs[sampleSong.songKey] = sampleSong;
@@ -536,6 +558,7 @@
 
         function init() {
             renderJukebox();
+            initializeSettings();
             backToJukeboxBtn.addEventListener('click', () => {
                 clearInterval(autoSaveInterval);
                 showJukeboxView();
@@ -551,10 +574,16 @@
             fileMenuBtn.addEventListener('click', () => {
                 fileMenuDropdown.style.display = fileMenuDropdown.style.display === 'block' ? 'none' : 'block';
             });
+            settingsBtn.addEventListener('click', () => {
+                settingsDropdown.style.display = settingsDropdown.style.display === 'block' ? 'none' : 'block';
+            });
             exportSongBtn.addEventListener('click', exportCurrentSong);
             songTitle.addEventListener('blur', renameSong);
             bubblesViewBtn.addEventListener('click', () => switchToBubbleView());
             textViewBtn.addEventListener('click', () => switchToTextView());
+
+            // Settings event listeners
+            autoSaveFrequencySelect.addEventListener('change', updateAutoSaveSettings);
 
             [styleTextarea, notesTextarea, newLinkInput, plainTextEditor].forEach(el => el.addEventListener('input', () => isDirty = true));
 
@@ -579,7 +608,39 @@
                 if (!fileMenuBtn.contains(event.target) && !fileMenuDropdown.contains(event.target)) {
                     fileMenuDropdown.style.display = 'none';
                 }
+                if (!settingsBtn.contains(event.target) && !settingsDropdown.contains(event.target)) {
+                    settingsDropdown.style.display = 'none';
+                }
             });
+        }
+
+        // --- Settings Management ---
+        function loadSettings() {
+            const savedSettings = localStorage.getItem('sunoSongsSettings');
+            if (savedSettings) {
+                settings = { ...settings, ...JSON.parse(savedSettings) };
+            }
+        }
+
+        function saveSettings() {
+            localStorage.setItem('sunoSongsSettings', JSON.stringify(settings));
+        }
+
+        function initializeSettings() {
+            autoSaveFrequencySelect.value = settings.autoSaveFrequency.toString();
+        }
+
+        function updateAutoSaveSettings() {
+            settings.autoSaveFrequency = parseInt(autoSaveFrequencySelect.value);
+            saveSettings();
+
+            // Restart auto-save with new settings if we're in a song
+            if (currentSongKey) {
+                clearInterval(autoSaveInterval);
+                if (settings.autoSaveFrequency > 0) {
+                    autoSaveInterval = setInterval(saveDraft, AUTO_SAVE_TIME());
+                }
+            }
         }
 
         // --- View Management ---
@@ -668,7 +729,9 @@
 
             showSongUiView(() => {
                 switchToBubbleView(version.lyrics);
-                autoSaveInterval = setInterval(saveDraft, AUTO_SAVE_TIME);
+                if (settings.autoSaveFrequency > 0) {
+                    autoSaveInterval = setInterval(saveDraft, AUTO_SAVE_TIME());
+                }
             });
         }
 
@@ -926,7 +989,7 @@
                 lyrics: getLyricsAsArray(),
                 style: styleTextarea.value,
                 links: allSongs[currentSongKey].versions[allSongs[currentSongKey].versions.length - 1].links || [],
-                notes: "Auto-saved draft."
+                notes: notesTextarea.value // Use the actual user notes from the textarea
             };
 
             song.versions.push(newDraft);
@@ -935,11 +998,14 @@
 
             if (isManual) {
                 showSaveStatus("Draft saved!");
+                // Only reload song for manual saves to update version picker
+                loadSong(currentSongKey, newVersionString);
             } else {
                 showSaveStatus(`Auto-saved at ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`);
+                // For auto-save, just update the version picker without reloading the whole song
+                populateVersionPicker();
+                versionDisplay.textContent = formatVersionString(newVersionString);
             }
-
-            loadSong(currentSongKey, newVersionString);
         }
 
         async function createVersion() {
