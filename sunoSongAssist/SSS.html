@@ -131,6 +131,8 @@
         .version-dropdown-content {
             max-height: 400px;
             overflow-y: auto;
+            min-width: 320px;
+            width: 320px;
         }
 
         .version-notes {
@@ -496,10 +498,10 @@
                     <div id="auto-save-status" class="text-sm text-gray-400 transition-opacity duration-500 opacity-0">
                     </div>
                     <div class="relative inline-block text-left">
-                        <button type="button" id="version-picker-btn"
+                        <button type="button" id="version-picker-btn" title="Select Version"
                             class="inline-flex justify-center w-full rounded-xl border border-purple-500/30 shadow-lg px-6 py-3 glass-input text-sm font-medium text-white hover:border-purple-400/50 focus:outline-none transition-all duration-200">
-                            Version: <span id="version-display"
-                                class="ml-2 font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent"></span>
+                            <span id="version-display"
+                                class="font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent"></span>
                             <svg class="-mr-1 ml-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
                                 fill="currentColor">
                                 <path fill-rule="evenodd"
@@ -517,13 +519,18 @@
                 <div class="relative">
                     <div class="flex justify-between items-center mb-4">
                         <h2 class="text-2xl font-semibold text-purple-300">Lyrics</h2>
-                        <div class="glass-input p-1 rounded-xl text-sm flex items-center border border-purple-500/20">
-                            <button id="bubbles-view-btn" class="switch-btn active" title="Bubble View">
-                                <i class="fas fa-wand-magic-sparkles text-base"></i>
+                        <div class="flex items-center gap-3">
+                            <button id="copy-lyrics-btn" class="glass-input px-3 py-2 rounded-xl text-sm border border-purple-500/20 hover:border-purple-400/40 transition-colors text-purple-400 hover:text-purple-300" title="Copy All Lyrics">
+                                <i class="fas fa-copy text-sm"></i>
                             </button>
-                            <button id="text-view-btn" class="switch-btn" title="Text View">
-                                <span class="font-mono font-bold text-sm">Aa</span>
-                            </button>
+                            <div class="glass-input p-1 rounded-xl text-sm flex items-center border border-purple-500/20">
+                                <button id="bubbles-view-btn" class="switch-btn active" title="Bubble View">
+                                    <i class="fas fa-wand-magic-sparkles text-base"></i>
+                                </button>
+                                <button id="text-view-btn" class="switch-btn" title="Text View">
+                                    <span class="font-mono font-bold text-sm">Aa</span>
+                                </button>
+                            </div>
                         </div>
                     </div>
                     <div id="lyrics-editor-container"
@@ -638,6 +645,7 @@
         const plainTextEditor = document.getElementById('plain-text-editor');
         const bubblesViewBtn = document.getElementById('bubbles-view-btn');
         const textViewBtn = document.getElementById('text-view-btn');
+        const copyLyricsBtn = document.getElementById('copy-lyrics-btn');
         const styleTextarea = document.getElementById('style-textarea');
         const notesTextarea = document.getElementById('notes-textarea');
         const linksList = document.getElementById('links-list');
@@ -730,6 +738,7 @@
             songTitle.addEventListener('blur', renameSong);
             bubblesViewBtn.addEventListener('click', () => switchToBubbleView());
             textViewBtn.addEventListener('click', () => switchToTextView());
+            copyLyricsBtn.addEventListener('click', copyAllLyrics);
 
             // Settings event listeners
             autoSaveFrequencySelect.addEventListener('change', updateAutoSaveSettings);
@@ -978,17 +987,20 @@
             plainTextEditor.classList.remove('hidden');
             lyricsEditorContainer.classList.add('hidden');
 
-            // Convert from bubble view to text - directly get textarea values
+            // Convert from bubble view to text - preserve ALL textarea values including empty ones
             const sections = [];
             const textareas = lyricsEditorContainer.querySelectorAll('.lyrics-section-bubble textarea');
             textareas.forEach(textarea => {
-                const value = textarea.value.trim();
-                if (value) {
-                    sections.push(value);
-                }
+                // Don't trim here to preserve exact spacing, and include ALL sections
+                sections.push(textarea.value);
             });
 
-            // Join sections with double newlines
+            // Remove only the last empty section if it exists (the auto-added empty bubble)
+            while (sections.length > 0 && sections[sections.length - 1].trim() === '') {
+                sections.pop();
+            }
+
+            // Join sections with double newlines to preserve structure
             const textContent = sections.join('\n\n');
             plainTextEditor.value = textContent;
 
@@ -1193,6 +1205,47 @@
             });
         }
 
+        function copyAllLyrics() {
+            let lyricsText = '';
+            
+            if (currentEditorMode === 'bubbles') {
+                // Get lyrics from bubble view
+                const sections = [];
+                const textareas = lyricsEditorContainer.querySelectorAll('.lyrics-section-bubble textarea');
+                textareas.forEach(textarea => {
+                    sections.push(textarea.value);
+                });
+                
+                // Remove only the last empty section if it exists (the auto-added empty bubble)
+                while (sections.length > 0 && sections[sections.length - 1].trim() === '') {
+                    sections.pop();
+                }
+                
+                lyricsText = sections.join('\n\n');
+            } else {
+                // Get lyrics from text view
+                lyricsText = plainTextEditor.value;
+            }
+
+            // Copy to clipboard
+            navigator.clipboard.writeText(lyricsText).then(() => {
+                showSaveStatus('Lyrics copied to clipboard!');
+            }).catch(err => {
+                // Fallback for older browsers
+                const textArea = document.createElement('textarea');
+                textArea.value = lyricsText;
+                document.body.appendChild(textArea);
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    showSaveStatus('Lyrics copied to clipboard!');
+                } catch (err) {
+                    showSaveStatus('Failed to copy lyrics');
+                }
+                document.body.removeChild(textArea);
+            });
+        }
+
         function formatVersionString(version) {
             if (version.includes('.')) {
                 const parts = version.split('.');
@@ -1223,7 +1276,9 @@
                 if (notesDisplay.toLowerCase().includes('auto-saved') || notesDisplay.toLowerCase().includes('auto-save')) {
                     notesDisplay = '<i class="fas fa-floppy-disk text-gray-400 text-sm" title="Auto-saved draft"></i>';
                 } else if (notesDisplay) {
-                    notesDisplay = `<span class="text-sm text-gray-300">${notesDisplay}</span>`;
+                    // Limit notes to 2 lines and add truncation
+                    const truncatedNotes = notesDisplay.length > 60 ? notesDisplay.substring(0, 60) + '...' : notesDisplay;
+                    notesDisplay = `<span class="text-sm text-gray-300 line-clamp-2 max-w-xs overflow-hidden" title="${notesDisplay}">${truncatedNotes}</span>`;
                 }
 
                 // Only show compare button if it's not the current version
