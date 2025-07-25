@@ -244,10 +244,25 @@
             transform: translate(-50%, -50%);
         }
 
-        .groove:nth-child(1) { width: 90%; height: 90%; }
-        .groove:nth-child(2) { width: 80%; height: 80%; }
-        .groove:nth-child(3) { width: 70%; height: 70%; }
-        .groove:nth-child(4) { width: 60%; height: 60%; }
+        .groove:nth-child(1) {
+            width: 90%;
+            height: 90%;
+        }
+
+        .groove:nth-child(2) {
+            width: 80%;
+            height: 80%;
+        }
+
+        .groove:nth-child(3) {
+            width: 70%;
+            height: 70%;
+        }
+
+        .groove:nth-child(4) {
+            width: 60%;
+            height: 60%;
+        }
 
         .song-card:hover {
             transform: translateY(-8px) scale(1.05);
@@ -395,7 +410,9 @@
                         <input type="file" id="song-importer" class="hidden" accept=".json">
                         <button id="export-song-btn" class="menu-dropdown-item w-full text-left" disabled>Export Current
                             Song</button>
-                        <button id="delete-song-btn" class="menu-dropdown-item w-full text-left text-red-400 hover:text-red-300" disabled>Delete Current Song</button>
+                        <button id="delete-song-btn"
+                            class="menu-dropdown-item w-full text-left text-red-400 hover:text-red-300" disabled>Delete
+                            Current Song</button>
                     </div>
                 </div>
                 <div class="relative">
@@ -411,7 +428,8 @@
                     <div id="settings-dropdown" class="menu-dropdown">
                         <div class="menu-dropdown-item">
                             <label class="block text-sm mb-2">Auto-save frequency</label>
-                            <select id="auto-save-frequency" class="w-full bg-gray-700 text-white rounded px-2 py-1 text-sm">
+                            <select id="auto-save-frequency"
+                                class="w-full bg-gray-700 text-white rounded px-2 py-1 text-sm">
                                 <option value="0">Disabled</option>
                                 <option value="30000">30 seconds</option>
                                 <option value="60000">1 minute</option>
@@ -485,11 +503,13 @@
                     <button id="back-to-jukebox" class="text-purple-400 hover:underline">&larr; Back to Jukebox</button>
                     <div class="flex items-center gap-3">
                         <h1 id="song-title" class="text-4xl font-bold" contenteditable="true"></h1>
-                        <button id="delete-song-editor-btn" 
-                                class="text-red-400 hover:text-red-300 transition-colors p-2 rounded-lg hover:bg-red-500/10" 
-                                title="Delete Song">
+                        <button id="delete-song-editor-btn"
+                            class="text-red-400 hover:text-red-300 transition-colors p-2 rounded-lg hover:bg-red-500/10"
+                            title="Delete Song">
                             <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                                <path fill-rule="evenodd"
+                                    d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
+                                    clip-rule="evenodd" />
                             </svg>
                         </button>
                     </div>
@@ -520,10 +540,13 @@
                     <div class="flex justify-between items-center mb-4">
                         <h2 class="text-2xl font-semibold text-purple-300">Lyrics</h2>
                         <div class="flex items-center gap-3">
-                            <button id="copy-lyrics-btn" class="glass-input px-3 py-2 rounded-xl text-sm border border-purple-500/20 hover:border-purple-400/40 transition-colors text-purple-400 hover:text-purple-300" title="Copy All Lyrics">
+                            <button id="copy-lyrics-btn"
+                                class="glass-input px-3 py-2 rounded-xl text-sm border border-purple-500/20 hover:border-purple-400/40 transition-colors text-purple-400 hover:text-purple-300"
+                                title="Copy All Lyrics">
                                 <i class="fas fa-copy text-sm"></i>
                             </button>
-                            <div class="glass-input p-1 rounded-xl text-sm flex items-center border border-purple-500/20">
+                            <div
+                                class="glass-input p-1 rounded-xl text-sm flex items-center border border-purple-500/20">
                                 <button id="bubbles-view-btn" class="switch-btn active" title="Bubble View">
                                     <i class="fas fa-wand-magic-sparkles text-base"></i>
                                 </button>
@@ -670,7 +693,7 @@
         let autoSaveInterval = null;
         let currentEditorMode = 'bubbles';
         let isDirty = false;
-        
+
         // Settings
         let settings = {
             autoSaveFrequency: 300000, // 5 minutes in milliseconds (default)
@@ -1207,7 +1230,7 @@
 
         function copyAllLyrics() {
             let lyricsText = '';
-            
+
             if (currentEditorMode === 'bubbles') {
                 // Get lyrics from bubble view
                 const sections = [];
@@ -1215,12 +1238,12 @@
                 textareas.forEach(textarea => {
                     sections.push(textarea.value);
                 });
-                
+
                 // Remove only the last empty section if it exists (the auto-added empty bubble)
                 while (sections.length > 0 && sections[sections.length - 1].trim() === '') {
                     sections.pop();
                 }
-                
+
                 lyricsText = sections.join('\n\n');
             } else {
                 // Get lyrics from text view
@@ -1270,7 +1293,7 @@
                 });
                 let versionClass = v.version.includes('.') ? 'draft-version' : 'font-bold';
                 const displayVersion = formatVersionString(v.version);
-                
+
                 // Handle auto-saved drafts - show icon instead of text
                 let notesDisplay = v.notes || '';
                 if (notesDisplay.toLowerCase().includes('auto-saved') || notesDisplay.toLowerCase().includes('auto-save')) {
@@ -1304,7 +1327,7 @@
                         </div>
                     </div>
                 `;
-                
+
                 // Add event listeners
                 const versionSelect = item.querySelector('.version-select');
                 versionSelect.onclick = () => {
@@ -1416,7 +1439,7 @@
             modal.querySelector('.close-modal').onclick = () => {
                 modal.remove();
             };
-            
+
             modal.querySelector('.load-version').onclick = () => {
                 modal.remove();
                 versionDropdown.style.display = 'none';
@@ -1449,10 +1472,10 @@
 
         async function deleteCurrentSong() {
             if (!currentSongKey) return;
-            
+
             const songData = allSongs[currentSongKey];
             const confirmMessage = `Are you sure you want to delete "${songData.songName}"?\n\nThis action cannot be undone and will delete all versions of this song.`;
-            
+
             if (!confirm(confirmMessage)) {
                 return;
             }
@@ -1460,21 +1483,21 @@
             try {
                 // Remove from database
                 await deleteSongFromDB(currentSongKey);
-                
+
                 // Remove from memory
                 delete allSongs[currentSongKey];
-                
+
                 // Clear auto-save interval
                 clearInterval(autoSaveInterval);
-                
+
                 // Show success message and return to jukebox
                 showSaveStatus("Song deleted successfully!");
-                
+
                 // Small delay to show the message before transitioning
                 setTimeout(() => {
                     showJukeboxView();
                 }, 1000);
-                
+
             } catch (error) {
                 alert("Error deleting song: " + error);
             }
@@ -1482,10 +1505,10 @@
 
         async function deleteSongFromJukebox(songKey) {
             if (!songKey || !allSongs[songKey]) return;
-            
+
             const songData = allSongs[songKey];
             const confirmMessage = `Are you sure you want to delete "${songData.songName}"?\n\nThis action cannot be undone and will delete all versions of this song.`;
-            
+
             if (!confirm(confirmMessage)) {
                 return;
             }
@@ -1493,24 +1516,24 @@
             try {
                 // Remove from database
                 await deleteSongFromDB(songKey);
-                
+
                 // Remove from memory
                 delete allSongs[songKey];
-                
+
                 // Re-render the jukebox to remove the deleted song
                 renderJukebox();
-                
+
                 // Show success message
                 const tempStatus = document.createElement('div');
                 tempStatus.className = 'fixed top-20 right-4 bg-green-600 text-white px-4 py-2 rounded-lg shadow-lg z-30';
                 tempStatus.textContent = 'Song deleted successfully!';
                 document.body.appendChild(tempStatus);
-                
+
                 // Remove the message after 3 seconds
                 setTimeout(() => {
                     tempStatus.remove();
                 }, 3000);
-                
+
             } catch (error) {
                 alert("Error deleting song: " + error);
             }
