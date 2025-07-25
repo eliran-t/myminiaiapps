@@ -478,9 +478,6 @@
                         <input type="file" id="song-importer" class="hidden" accept=".json">
                         <button id="export-song-btn" class="menu-dropdown-item w-full text-left" disabled>Export Current
                             Song</button>
-                        <button id="delete-song-btn"
-                            class="menu-dropdown-item w-full text-left text-red-400 hover:text-red-300" disabled>Delete
-                            Current Song</button>
                     </div>
                 </div>
                 <div class="relative">
@@ -895,7 +892,6 @@
         const fileMenuBtn = document.getElementById('file-menu-btn');
         const fileMenuDropdown = document.getElementById('file-menu-dropdown');
         const exportSongBtn = document.getElementById('export-song-btn');
-        const deleteSongBtn = document.getElementById('delete-song-btn');
         const deleteSongEditorBtn = document.getElementById('delete-song-editor-btn');
         const settingsBtn = document.getElementById('settings-btn');
         const settingsDropdown = document.getElementById('settings-dropdown');
@@ -991,7 +987,6 @@
                 settingsDropdown.style.display = settingsDropdown.style.display === 'block' ? 'none' : 'block';
             });
             exportSongBtn.addEventListener('click', exportCurrentSong);
-            deleteSongBtn.addEventListener('click', deleteCurrentSong);
             deleteSongEditorBtn.addEventListener('click', deleteCurrentSong);
             songTitle.addEventListener('blur', renameSong);
             bubblesViewBtn.addEventListener('click', () => switchToBubbleView());
@@ -1173,7 +1168,6 @@
         // --- View Management ---
         function showJukeboxView() {
             exportSongBtn.disabled = true;
-            deleteSongBtn.disabled = true;
             gsap.to(songUiView, {
                 opacity: 0, duration: 0.3, onComplete: () => {
                     songUiView.classList.add('hidden');
@@ -1185,7 +1179,6 @@
         }
         function showSongUiView(onCompleteCallback) {
             exportSongBtn.disabled = false;
-            deleteSongBtn.disabled = false;
             gsap.to(jukeboxView, {
                 opacity: 0, duration: 0.3, onComplete: () => {
                     jukeboxView.classList.add('hidden');
