@@ -385,6 +385,74 @@
             transform: translateY(-2px);
             box-shadow: 0 8px 25px rgba(16, 185, 129, 0.4);
         }
+
+        .section-suggestions {
+            position: absolute;
+            background: #374151;
+            border: 1px solid #4B5563;
+            border-radius: 8px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            max-height: 200px;
+            overflow-y: auto;
+            min-width: 150px;
+        }
+        
+        .suggestion-item {
+            transition: background-color 0.2s ease;
+        }
+        
+        .suggestion-item:hover {
+            background-color: #4B5563 !important;
+        }
+        
+        .section-suggestions::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .section-suggestions::-webkit-scrollbar-track {
+            background: #374151;
+        }
+        
+        .section-suggestions::-webkit-scrollbar-thumb {
+            background: #6B7280;
+            border-radius: 3px;
+        }
+        
+        .section-suggestions::-webkit-scrollbar-thumb:hover {
+            background: #9CA3AF;
+        }
+
+        .color-setting {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .color-input {
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            background: transparent;
+            cursor: pointer;
+        }
+
+        .color-input::-webkit-color-swatch-wrapper {
+            padding: 0;
+            border-radius: 4px;
+            border: 1px solid #374151;
+        }
+
+        .color-input::-webkit-color-swatch {
+            border: none;
+            border-radius: 4px;
+        }
+
+        .color-input::-moz-color-swatch {
+            border: 1px solid #374151;
+            border-radius: 4px;
+        }
     </style>
 </head>
 
@@ -427,16 +495,40 @@
                     </button>
                     <div id="settings-dropdown" class="menu-dropdown">
                         <div class="menu-dropdown-item">
-                            <label class="block text-sm mb-2">Auto-save frequency</label>
-                            <select id="auto-save-frequency"
-                                class="w-full bg-gray-700 text-white rounded px-2 py-1 text-sm">
-                                <option value="0">Disabled</option>
-                                <option value="30000">30 seconds</option>
-                                <option value="60000">1 minute</option>
-                                <option value="120000">2 minutes</option>
-                                <option value="300000" selected>5 minutes</option>
-                                <option value="600000">10 minutes</option>
-                            </select>
+                            <div class="flex items-center justify-between">
+                                <label class="text-sm text-gray-300">Auto-save frequency</label>
+                                <select id="auto-save-frequency"
+                                    class="bg-gray-700 text-white rounded px-2 py-1 text-sm border border-gray-600 focus:border-purple-400 focus:outline-none">
+                                    <option value="0">Disabled</option>
+                                    <option value="30000">30 seconds</option>
+                                    <option value="60000">1 minute</option>
+                                    <option value="120000">2 minutes</option>
+                                    <option value="300000" selected>5 minutes</option>
+                                    <option value="600000">10 minutes</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="menu-dropdown-item border-t border-gray-600">
+                            <div class="flex items-center justify-between">
+                                <label class="text-sm text-gray-300">Section Colors</label>
+                                <button id="open-colors-modal" class="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1 rounded text-sm transition-colors">
+                                    <i class="fas fa-palette mr-1"></i>
+                                    Customize
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="menu-dropdown-item border-t border-gray-600">
+                            <div class="flex items-center justify-between">
+                                <label class="text-sm text-gray-300">Theme</label>
+                                <select id="theme-select"
+                                    class="bg-gray-700 text-white rounded px-2 py-1 text-sm border border-gray-600 focus:border-purple-400 focus:outline-none">
+                                    <option value="dark">Dark</option>
+                                    <option value="light">Light</option>
+                                    <option value="auto">Auto</option>
+                                </select>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -601,6 +693,129 @@
         </div>
     </div>
 
+    <!-- Color Customization Modal -->
+    <div id="colors-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden flex items-center justify-center">
+        <div class="bg-gray-800 rounded-xl shadow-2xl border border-gray-700 max-w-2xl w-full mx-4 max-h-[90vh] overflow-hidden">
+            <!-- Modal Header -->
+            <div class="flex items-center justify-between p-6 border-b border-gray-700">
+                <div class="flex items-center gap-3">
+                    <i class="fas fa-palette text-purple-400 text-xl"></i>
+                    <h2 class="text-xl font-semibold text-white">Section Colors</h2>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button id="reset-colors-btn" class="text-sm text-blue-400 hover:text-blue-300 px-3 py-1 rounded hover:bg-gray-700 transition-colors">
+                        <i class="fas fa-undo mr-1"></i>
+                        Reset to Defaults
+                    </button>
+                    <button id="close-colors-modal" class="text-gray-400 hover:text-white p-2 rounded-lg hover:bg-gray-700 transition-colors">
+                        <i class="fas fa-times text-lg"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Modal Content -->
+            <div class="p-6 overflow-y-auto max-h-[60vh]">
+                <div class="grid grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div class="color-setting" data-section="verse">
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Verse</label>
+                        <div class="flex items-center gap-2">
+                            <input type="color" class="color-input w-12 h-8 rounded cursor-pointer border border-gray-600" value="#3B82F6">
+                            <div class="color-hex-display flex-1 bg-gray-700 rounded px-3 py-1 text-sm text-gray-300 font-mono">#3B82F6</div>
+                        </div>
+                    </div>
+                    <div class="color-setting" data-section="chorus">
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Chorus</label>
+                        <div class="flex items-center gap-2">
+                            <input type="color" class="color-input w-12 h-8 rounded cursor-pointer border border-gray-600" value="#8B5CF6">
+                            <div class="color-hex-display flex-1 bg-gray-700 rounded px-3 py-1 text-sm text-gray-300 font-mono">#8B5CF6</div>
+                        </div>
+                    </div>
+                    <div class="color-setting" data-section="bridge">
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Bridge</label>
+                        <div class="flex items-center gap-2">
+                            <input type="color" class="color-input w-12 h-8 rounded cursor-pointer border border-gray-600" value="#F97316">
+                            <div class="color-hex-display flex-1 bg-gray-700 rounded px-3 py-1 text-sm text-gray-300 font-mono">#F97316</div>
+                        </div>
+                    </div>
+                    <div class="color-setting" data-section="preChorus">
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Pre-Chorus</label>
+                        <div class="flex items-center gap-2">
+                            <input type="color" class="color-input w-12 h-8 rounded cursor-pointer border border-gray-600" value="#EAB308">
+                            <div class="color-hex-display flex-1 bg-gray-700 rounded px-3 py-1 text-sm text-gray-300 font-mono">#EAB308</div>
+                        </div>
+                    </div>
+                    <div class="color-setting" data-section="intro">
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Intro</label>
+                        <div class="flex items-center gap-2">
+                            <input type="color" class="color-input w-12 h-8 rounded cursor-pointer border border-gray-600" value="#10B981">
+                            <div class="color-hex-display flex-1 bg-gray-700 rounded px-3 py-1 text-sm text-gray-300 font-mono">#10B981</div>
+                        </div>
+                    </div>
+                    <div class="color-setting" data-section="outro">
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Outro</label>
+                        <div class="flex items-center gap-2">
+                            <input type="color" class="color-input w-12 h-8 rounded cursor-pointer border border-gray-600" value="#EF4444">
+                            <div class="color-hex-display flex-1 bg-gray-700 rounded px-3 py-1 text-sm text-gray-300 font-mono">#EF4444</div>
+                        </div>
+                    </div>
+                    <div class="color-setting" data-section="hook">
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Hook</label>
+                        <div class="flex items-center gap-2">
+                            <input type="color" class="color-input w-12 h-8 rounded cursor-pointer border border-gray-600" value="#A3A3A3">
+                            <div class="color-hex-display flex-1 bg-gray-700 rounded px-3 py-1 text-sm text-gray-300 font-mono">#A3A3A3</div>
+                        </div>
+                    </div>
+                    <div class="color-setting" data-section="refrain">
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Refrain</label>
+                        <div class="flex items-center gap-2">
+                            <input type="color" class="color-input w-12 h-8 rounded cursor-pointer border border-gray-600" value="#06B6D4">
+                            <div class="color-hex-display flex-1 bg-gray-700 rounded px-3 py-1 text-sm text-gray-300 font-mono">#06B6D4</div>
+                        </div>
+                    </div>
+                    <div class="color-setting" data-section="breakdown">
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Breakdown</label>
+                        <div class="flex items-center gap-2">
+                            <input type="color" class="color-input w-12 h-8 rounded cursor-pointer border border-gray-600" value="#6B7280">
+                            <div class="color-hex-display flex-1 bg-gray-700 rounded px-3 py-1 text-sm text-gray-300 font-mono">#6B7280</div>
+                        </div>
+                    </div>
+                    <div class="color-setting" data-section="solo">
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Solo</label>
+                        <div class="flex items-center gap-2">
+                            <input type="color" class="color-input w-12 h-8 rounded cursor-pointer border border-gray-600" value="#EC4899">
+                            <div class="color-hex-display flex-1 bg-gray-700 rounded px-3 py-1 text-sm text-gray-300 font-mono">#EC4899</div>
+                        </div>
+                    </div>
+                    <div class="color-setting" data-section="interlude">
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Interlude</label>
+                        <div class="flex items-center gap-2">
+                            <input type="color" class="color-input w-12 h-8 rounded cursor-pointer border border-gray-600" value="#F59E0B">
+                            <div class="color-hex-display flex-1 bg-gray-700 rounded px-3 py-1 text-sm text-gray-300 font-mono">#F59E0B</div>
+                        </div>
+                    </div>
+                    <div class="color-setting" data-section="tag">
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Tag</label>
+                        <div class="flex items-center gap-2">
+                            <input type="color" class="color-input w-12 h-8 rounded cursor-pointer border border-gray-600" value="#059669">
+                            <div class="color-hex-display flex-1 bg-gray-700 rounded px-3 py-1 text-sm text-gray-300 font-mono">#059669</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="flex justify-end gap-3 p-6 border-t border-gray-700">
+                <button id="cancel-colors-btn" class="px-4 py-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded transition-colors">
+                    Cancel
+                </button>
+                <button id="save-colors-btn" class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded transition-colors">
+                    <i class="fas fa-save mr-1"></i>
+                    Save Changes
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script>
         // --- DB HELPER ---
         const DB_NAME = 'SunoSongsDB';
@@ -685,6 +900,12 @@
         const settingsBtn = document.getElementById('settings-btn');
         const settingsDropdown = document.getElementById('settings-dropdown');
         const autoSaveFrequencySelect = document.getElementById('auto-save-frequency');
+        const colorsModal = document.getElementById('colors-modal');
+        const openColorsModalBtn = document.getElementById('open-colors-modal');
+        const closeColorsModalBtn = document.getElementById('close-colors-modal');
+        const resetColorsBtn = document.getElementById('reset-colors-btn');
+        const saveColorsBtn = document.getElementById('save-colors-btn');
+        const cancelColorsBtn = document.getElementById('cancel-colors-btn');
 
         // --- State ---
         let currentSongKey = null;
@@ -697,6 +918,20 @@
         // Settings
         let settings = {
             autoSaveFrequency: 300000, // 5 minutes in milliseconds (default)
+            sectionColors: {
+                verse: '#3B82F6',
+                chorus: '#8B5CF6', 
+                bridge: '#F97316',
+                preChorus: '#EAB308',
+                intro: '#10B981',
+                outro: '#EF4444',
+                hook: '#A3A3A3',
+                refrain: '#06B6D4',
+                breakdown: '#6B7280',
+                solo: '#EC4899',
+                interlude: '#F59E0B',
+                tag: '#059669'
+            }
         };
         const AUTO_SAVE_TIME = () => settings.autoSaveFrequency;
 
@@ -765,6 +1000,28 @@
 
             // Settings event listeners
             autoSaveFrequencySelect.addEventListener('change', updateAutoSaveSettings);
+            
+            // Color modal event listeners
+            openColorsModalBtn.addEventListener('click', openColorsModal);
+            closeColorsModalBtn.addEventListener('click', closeColorsModal);
+            cancelColorsBtn.addEventListener('click', closeColorsModal);
+            saveColorsBtn.addEventListener('click', saveColorsAndClose);
+            resetColorsBtn.addEventListener('click', resetSectionColors);
+            
+            // Close modal when clicking backdrop
+            colorsModal.addEventListener('click', (e) => {
+                if (e.target === colorsModal) {
+                    closeColorsModal();
+                }
+            });
+            
+            // Color input event listeners in modal
+            colorsModal.querySelectorAll('.color-input').forEach(input => {
+                input.addEventListener('input', (e) => {
+                    const hexDisplay = e.target.closest('.color-setting').querySelector('.color-hex-display');
+                    hexDisplay.textContent = e.target.value.toUpperCase();
+                });
+            });
 
             [styleTextarea, notesTextarea, newLinkInput, plainTextEditor].forEach(el => el.addEventListener('input', () => isDirty = true));
 
@@ -809,6 +1066,7 @@
 
         function initializeSettings() {
             autoSaveFrequencySelect.value = settings.autoSaveFrequency.toString();
+            initializeColorSettings();
         }
 
         function updateAutoSaveSettings() {
@@ -822,6 +1080,94 @@
                     autoSaveInterval = setInterval(saveDraft, AUTO_SAVE_TIME());
                 }
             }
+        }
+
+        function initializeColorSettings() {
+            // Color settings are now initialized when modal opens
+            // This function maintained for compatibility
+        }
+
+        function updateSectionColor(section, color) {
+            settings.sectionColors[section] = color;
+            saveSettings();
+            
+            // Update all existing bubbles with this section
+            refreshAllBubbleColors();
+        }
+
+        function resetSectionColors() {
+            settings.sectionColors = {
+                verse: '#3B82F6',
+                chorus: '#8B5CF6', 
+                bridge: '#F97316',
+                preChorus: '#EAB308',
+                intro: '#10B981',
+                outro: '#EF4444',
+                hook: '#A3A3A3',
+                refrain: '#06B6D4',
+                breakdown: '#6B7280',
+                solo: '#EC4899',
+                interlude: '#F59E0B',
+                tag: '#059669'
+            };
+            saveSettings();
+            initializeModalColors(); // Update modal if open
+            refreshAllBubbleColors();
+        }
+
+        function refreshAllBubbleColors() {
+            // Update all existing bubbles to use new colors
+            document.querySelectorAll('.lyrics-section-bubble').forEach(bubble => {
+                const textarea = bubble.querySelector('textarea');
+                if (textarea) {
+                    const lines = textarea.value.split('\n');
+                    const sectionId = extractSectionId(lines[0]);
+                    if (sectionId) {
+                        const newColor = getSectionColor(sectionId);
+                        bubble.style.backgroundColor = newColor + '20'; // 20% opacity
+                        bubble.style.borderColor = newColor;
+                    }
+                }
+            });
+        }
+
+        // --- Color Modal Management ---
+        function openColorsModal() {
+            // Initialize modal with current color values
+            initializeModalColors();
+            colorsModal.classList.remove('hidden');
+            settingsDropdown.style.display = 'none';
+        }
+
+        function closeColorsModal() {
+            colorsModal.classList.add('hidden');
+        }
+
+        function initializeModalColors() {
+            colorsModal.querySelectorAll('.color-setting').forEach(setting => {
+                const section = setting.dataset.section;
+                const colorInput = setting.querySelector('.color-input');
+                const hexDisplay = setting.querySelector('.color-hex-display');
+                
+                if (settings.sectionColors[section]) {
+                    const color = settings.sectionColors[section];
+                    colorInput.value = color;
+                    hexDisplay.textContent = color.toUpperCase();
+                }
+            });
+        }
+
+        function saveColorsAndClose() {
+            // Save all color changes
+            colorsModal.querySelectorAll('.color-setting').forEach(setting => {
+                const section = setting.dataset.section;
+                const colorInput = setting.querySelector('.color-input');
+                settings.sectionColors[section] = colorInput.value;
+            });
+            
+            saveSettings();
+            refreshAllBubbleColors();
+            closeColorsModal();
         }
 
         // --- View Management ---
@@ -1035,13 +1381,18 @@
         function createBubbleElement(sectionText) {
             const bubble = document.createElement('div');
             bubble.draggable = true;
-            bubble.className = 'lyrics-section-bubble';
+            bubble.className = 'lyrics-section-bubble relative';
 
             const textarea = document.createElement('textarea');
             textarea.value = sectionText;
             textarea.className = 'editor-font';
 
+            // Create suggestions dropdown
+            const suggestionsDropdown = document.createElement('div');
+            suggestionsDropdown.className = 'section-suggestions absolute top-0 left-0 bg-gray-800 border border-purple-500/30 rounded-lg shadow-lg z-50 max-w-xs hidden';
+
             bubble.appendChild(textarea);
+            bubble.appendChild(suggestionsDropdown);
             updateBubbleStyle(bubble);
 
             bubble.addEventListener('dragstart', () => bubble.classList.add('dragging'));
@@ -1052,8 +1403,22 @@
                 autoResizeTextarea(e);
                 maybeAddNewBubble(e);
                 updateBubbleStyle(bubble);
+                showSectionSuggestions(textarea, suggestionsDropdown);
             });
-            textarea.addEventListener('keydown', handleTabText);
+            
+            textarea.addEventListener('keydown', (e) => {
+                if (handleSuggestionKeyboard(e, textarea, suggestionsDropdown)) {
+                    return; // Suggestion was handled
+                }
+                handleTabText(e);
+            });
+
+            textarea.addEventListener('blur', () => {
+                // Hide suggestions with a small delay to allow for clicks
+                setTimeout(() => {
+                    suggestionsDropdown.classList.add('hidden');
+                }, 150);
+            });
 
             return bubble;
         }
@@ -1153,11 +1518,181 @@
             }, { offset: Number.NEGATIVE_INFINITY }).element;
         }
 
+        // --- Section Color System ---
+        // Function to get predefined sections with current colors from settings
+        function getPredefinedSections() {
+            return {
+                'verse': { color: settings.sectionColors.verse, name: 'Verse' },
+                'chorus': { color: settings.sectionColors.chorus, name: 'Chorus' },
+                'bridge': { color: settings.sectionColors.bridge, name: 'Bridge' },
+                'pre-chorus': { color: settings.sectionColors.preChorus, name: 'Pre-Chorus' },
+                'intro': { color: settings.sectionColors.intro, name: 'Intro' },
+                'outro': { color: settings.sectionColors.outro, name: 'Outro' },
+                'hook': { color: settings.sectionColors.hook, name: 'Hook' },
+                'refrain': { color: settings.sectionColors.refrain, name: 'Refrain' },
+                'breakdown': { color: settings.sectionColors.breakdown, name: 'Breakdown' },
+                'solo': { color: settings.sectionColors.solo, name: 'Solo' },
+                'interlude': { color: settings.sectionColors.interlude, name: 'Interlude' },
+                'tag': { color: settings.sectionColors.tag, name: 'Tag' }
+            };
+        }
+
+        const FALLBACK_COLORS = [
+            '#AD1457', '#8E24AA', '#5E35B1', '#3949AB', '#1E88E5', 
+            '#039BE5', '#00ACC1', '#00897B', '#43A047', '#689F38', 
+            '#827717', '#F57F17', '#FF8F00', '#F57C00', '#FF5722'
+        ];
+
         function getSectionColor(sectionId) {
-            const baseColors = ['#4A235A', '#154360', '#145A32', '#6E2C00', '#5B2C6F', '#0E6251', '#78281F', '#424949'];
+            const normalizedId = sectionId.toLowerCase().trim();
+            const predefinedSections = getPredefinedSections();
+            
+            // Check if it's a predefined section
+            if (predefinedSections[normalizedId]) {
+                return predefinedSections[normalizedId].color;
+            }
+            
+            // For custom sections, use hash-based color assignment with better colors
             let hash = 0;
-            for (let i = 0; i < sectionId.length; i++) hash = sectionId.charCodeAt(i) + ((hash << 5) - hash);
-            return baseColors[Math.abs(hash % baseColors.length)];
+            for (let i = 0; i < normalizedId.length; i++) {
+                hash = normalizedId.charCodeAt(i) + ((hash << 5) - hash);
+            }
+            return FALLBACK_COLORS[Math.abs(hash % FALLBACK_COLORS.length)];
+        }
+
+        function getSectionSuggestions(currentText) {
+            const input = currentText.toLowerCase().trim();
+            
+            // If already typing a section tag
+            if (input.startsWith('[') && !input.endsWith(']')) {
+                const partial = input.slice(1).toLowerCase();
+                const suggestions = [];
+                
+                // Add predefined sections that match
+                const predefinedSections = getPredefinedSections();
+                Object.entries(predefinedSections).forEach(([key, value]) => {
+                    if (key.includes(partial) || value.name.toLowerCase().includes(partial)) {
+                        suggestions.push({
+                            id: key,
+                            name: value.name,
+                            display: `[${value.name}]`,
+                            color: value.color
+                        });
+                    }
+                });
+                
+                return suggestions.slice(0, 6); // Limit to 6 suggestions
+            }
+            
+            return [];
+        }
+
+        function showSectionSuggestions(textarea, dropdown) {
+            const cursorPos = textarea.selectionStart;
+            const textBefore = textarea.value.substring(0, cursorPos);
+            const lines = textBefore.split('\n');
+            const currentLine = lines[lines.length - 1];
+            
+            const suggestions = getSectionSuggestions(currentLine);
+            
+            if (suggestions.length > 0) {
+                dropdown.innerHTML = suggestions.map((suggestion, index) => `
+                    <div class="suggestion-item p-2 hover:bg-gray-700 cursor-pointer flex items-center gap-2 ${index === 0 ? 'bg-gray-700' : ''}" 
+                         data-suggestion="${suggestion.display}" data-index="${index}">
+                        <div class="w-3 h-3 rounded" style="background-color: ${suggestion.color}"></div>
+                        <span class="text-white text-sm">${suggestion.display}</span>
+                    </div>
+                `).join('');
+                
+                // Position dropdown
+                const rect = textarea.getBoundingClientRect();
+                dropdown.style.top = `${textarea.offsetHeight + 5}px`;
+                dropdown.style.left = '0px';
+                dropdown.classList.remove('hidden');
+                
+                // Add click handlers
+                dropdown.querySelectorAll('.suggestion-item').forEach(item => {
+                    item.addEventListener('click', () => {
+                        applySuggestion(textarea, item.dataset.suggestion);
+                        dropdown.classList.add('hidden');
+                    });
+                });
+            } else {
+                dropdown.classList.add('hidden');
+            }
+        }
+
+        function applySuggestion(textarea, suggestion) {
+            const cursorPos = textarea.selectionStart;
+            const textBefore = textarea.value.substring(0, cursorPos);
+            const textAfter = textarea.value.substring(cursorPos);
+            const lines = textBefore.split('\n');
+            const currentLine = lines[lines.length - 1];
+            
+            // Replace the current line with the suggestion
+            const beforeLines = lines.slice(0, -1);
+            const newText = [...beforeLines, suggestion].join('\n') + textAfter;
+            
+            textarea.value = newText;
+            
+            // Position cursor after the suggestion
+            const newCursorPos = beforeLines.join('\n').length + (beforeLines.length > 0 ? 1 : 0) + suggestion.length;
+            textarea.setSelectionRange(newCursorPos, newCursorPos);
+            
+            // Trigger events
+            textarea.dispatchEvent(new Event('input'));
+            textarea.focus();
+        }
+
+        function handleSuggestionKeyboard(e, textarea, dropdown) {
+            if (dropdown.classList.contains('hidden')) return false;
+            
+            const items = dropdown.querySelectorAll('.suggestion-item');
+            if (items.length === 0) return false;
+            
+            const currentSelected = dropdown.querySelector('.suggestion-item.bg-gray-700');
+            let selectedIndex = currentSelected ? parseInt(currentSelected.dataset.index) : 0;
+            
+            switch (e.key) {
+                case 'ArrowDown':
+                    e.preventDefault();
+                    selectedIndex = (selectedIndex + 1) % items.length;
+                    updateSuggestionSelection(items, selectedIndex);
+                    return true;
+                    
+                case 'ArrowUp':
+                    e.preventDefault();
+                    selectedIndex = selectedIndex === 0 ? items.length - 1 : selectedIndex - 1;
+                    updateSuggestionSelection(items, selectedIndex);
+                    return true;
+                    
+                case 'Enter':
+                case 'Tab':
+                    e.preventDefault();
+                    const selectedItem = items[selectedIndex];
+                    if (selectedItem) {
+                        applySuggestion(textarea, selectedItem.dataset.suggestion);
+                        dropdown.classList.add('hidden');
+                    }
+                    return true;
+                    
+                case 'Escape':
+                    e.preventDefault();
+                    dropdown.classList.add('hidden');
+                    return true;
+            }
+            
+            return false;
+        }
+
+        function updateSuggestionSelection(items, selectedIndex) {
+            items.forEach((item, index) => {
+                if (index === selectedIndex) {
+                    item.classList.add('bg-gray-700');
+                } else {
+                    item.classList.remove('bg-gray-700');
+                }
+            });
         }
 
         // --- Versioning and Saving ---
@@ -1236,14 +1771,12 @@
                 const sections = [];
                 const textareas = lyricsEditorContainer.querySelectorAll('.lyrics-section-bubble textarea');
                 textareas.forEach(textarea => {
-                    sections.push(textarea.value);
+                    if (textarea.value.trim() !== '') { // Only include non-empty sections
+                        sections.push(textarea.value);
+                    }
                 });
 
-                // Remove only the last empty section if it exists (the auto-added empty bubble)
-                while (sections.length > 0 && sections[sections.length - 1].trim() === '') {
-                    sections.pop();
-                }
-
+                // Join sections with double newlines to preserve section separation
                 lyricsText = sections.join('\n\n');
             } else {
                 // Get lyrics from text view
