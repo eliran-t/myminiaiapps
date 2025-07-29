@@ -708,14 +708,14 @@
         }
 
         .btn-secondary {
-            background: linear-gradient(135deg, #059669, #10b981);
-            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
             transition: all 0.2s ease;
         }
 
         .btn-secondary:hover {
             transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(16, 185, 129, 0.4);
+            box-shadow: 0 8px 25px rgba(139, 92, 246, 0.4);
         }
 
         .section-suggestions {
@@ -921,6 +921,17 @@
                                 </div>
                             </div>
                         </button>
+                        <button id="create-manual-backup-btn" class="menu-dropdown-item w-full text-left">
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 bg-purple-500/20 rounded-lg flex items-center justify-center">
+                                    <i class="fas fa-archive text-purple-400 text-sm"></i>
+                                </div>
+                                <div>
+                                    <span class="text-sm font-medium text-gray-200">Create Backup</span>
+                                    <p class="text-xs text-gray-400">Backup all songs now</p>
+                                </div>
+                            </div>
+                        </button>
                     </div>
                 </div>
                 <div class="relative">
@@ -1044,31 +1055,21 @@
         </div>
 
         <div id="song-ui-view" class="hidden">
-            <div class="flex justify-between items-center mb-6">
-                <div>
-                    <button id="back-to-jukebox" class="text-purple-400 hover:underline">&larr; Back to Jukebox</button>
-                    <div class="flex items-center gap-3">
-                        <h1 id="song-title" class="text-4xl font-bold" contenteditable="true"></h1>
-                        <button id="delete-song-editor-btn"
-                            class="text-red-400 hover:text-red-300 transition-colors p-2 rounded-lg hover:bg-red-500/10"
-                            title="Delete Song">
-                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd"
-                                    d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
-                                    clip-rule="evenodd" />
-                            </svg>
-                        </button>
-                    </div>
-                </div>
+            <!-- Compact Header -->
+            <div class="flex justify-between items-center mb-4 bg-black/20 backdrop-blur-xl border border-white/10 rounded-2xl p-4">
                 <div class="flex items-center gap-4">
-                    <div id="auto-save-status" class="text-sm text-gray-400 transition-opacity duration-500 opacity-0">
+                    <button id="back-to-jukebox" class="text-purple-400 hover:underline text-sm">&larr; Back</button>
+                    <h1 id="song-title" class="text-2xl font-bold" contenteditable="true"></h1>
+                </div>
+                <div class="flex items-center gap-3">
+                    <div id="auto-save-status" class="text-xs text-gray-400 transition-opacity duration-500 opacity-0">
                     </div>
                     <div class="relative inline-block text-left">
                         <button type="button" id="version-picker-btn" title="Select Version"
-                            class="inline-flex justify-center w-full rounded-xl border border-purple-500/30 shadow-lg px-6 py-3 glass-input text-sm font-medium text-white hover:border-purple-400/50 focus:outline-none transition-all duration-200">
+                            class="inline-flex justify-center rounded-xl border border-purple-500/30 shadow-lg px-4 py-2 glass-input text-sm font-medium text-white hover:border-purple-400/50 focus:outline-none transition-all duration-200">
                             <span id="version-display"
                                 class="font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent"></span>
-                            <svg class="-mr-1 ml-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
+                            <svg class="-mr-1 ml-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"
                                 fill="currentColor">
                                 <path fill-rule="evenodd"
                                     d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
@@ -1077,69 +1078,80 @@
                         </button>
                         <div id="version-dropdown" class="menu-dropdown version-dropdown-content"></div>
                     </div>
+                    <!-- Version Control & Action Buttons -->
+                    <div class="flex items-center gap-2">
+                        <button id="create-version-btn" title="Create New Version"
+                            class="inline-flex justify-center items-center rounded-xl border border-purple-500/30 shadow-lg px-4 py-2 glass-input text-sm font-medium text-white hover:border-purple-400/50 focus:outline-none transition-all duration-200 btn-secondary">
+                            ✨
+                        </button>
+                        <button id="save-draft-btn" title="Save Draft"
+                            class="inline-flex justify-center items-center rounded-xl border border-purple-500/30 shadow-lg px-4 py-2 glass-input text-sm font-medium text-white hover:border-purple-400/50 focus:outline-none transition-all duration-200 btn-primary">
+                            💾
+                        </button>
+                        <button id="delete-song-editor-btn" title="Delete Song"
+                            class="inline-flex justify-center items-center rounded-xl border border-red-500/30 shadow-lg px-4 py-2 glass-input text-sm font-medium text-white hover:border-red-400/50 focus:outline-none transition-all duration-200 hover:bg-red-500/10">
+                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd"
+                                    d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
+                                    clip-rule="evenodd" />
+                            </svg>
+                        </button>
+                    </div>
                 </div>
             </div>
 
-            <div class="grid grid-cols-2 gap-8">
-                <!-- Left Half -->
-                <div class="relative">
-                    <div class="flex justify-between items-center mb-4">
-                        <h2 class="text-2xl font-semibold text-purple-300">Lyrics</h2>
+            <div class="grid grid-cols-3 gap-6">
+                <!-- Lyrics Column - Takes 2/3 of space -->
+                <div class="col-span-2 relative">
+                    <div class="flex justify-between items-center mb-3">
+                        <h2 class="text-xl font-semibold text-purple-300">Lyrics</h2>
                         <div class="flex items-center gap-3">
                             <button id="copy-lyrics-btn"
-                                class="glass-input px-3 py-2 rounded-xl text-sm border border-purple-500/20 hover:border-purple-400/40 transition-colors text-purple-400 hover:text-purple-300"
+                                class="glass-input px-2 py-1 rounded-lg text-xs border border-purple-500/20 hover:border-purple-400/40 transition-colors text-purple-400 hover:text-purple-300"
                                 title="Copy All Lyrics">
-                                <i class="fas fa-copy text-sm"></i>
+                                <i class="fas fa-copy"></i>
                             </button>
                             <div
-                                class="glass-input p-1 rounded-xl text-sm flex items-center border border-purple-500/20">
+                                class="glass-input p-1 rounded-lg text-xs flex items-center border border-purple-500/20">
                                 <button id="bubbles-view-btn" class="switch-btn active" title="Bubble View">
-                                    <i class="fas fa-wand-magic-sparkles text-base"></i>
+                                    <i class="fas fa-wand-magic-sparkles text-sm"></i>
                                 </button>
                                 <button id="text-view-btn" class="switch-btn" title="Text View">
-                                    <span class="font-mono font-bold text-sm">Aa</span>
+                                    <span class="font-mono font-bold text-xs">Aa</span>
                                 </button>
                             </div>
                         </div>
                     </div>
                     <div id="lyrics-editor-container"
-                        class="glass-input p-6 rounded-xl h-[60vh] overflow-y-auto border-0"></div>
+                        class="glass-input p-4 rounded-xl h-[75vh] overflow-y-auto border-0"></div>
                     <textarea id="plain-text-editor"
-                        class="glass-input p-6 rounded-xl h-[60vh] w-full editor-font text-white hidden resize-none outline-none border-0"
+                        class="glass-input p-4 rounded-xl h-[75vh] w-full editor-font text-white hidden resize-none outline-none border-0"
                         placeholder="Write your lyrics here..."></textarea>
-                    <div
-                        class="absolute bottom-6 right-6 flex items-center gap-3 bg-black/20 backdrop-blur-xl border border-white/10 rounded-2xl p-2 shadow-2xl">
-                        <span class="text-sm text-gray-300 pl-4 pr-2">Save as...</span>
-                        <button id="create-version-btn"
-                            class="fab btn-secondary text-white font-bold py-3 px-6 rounded-xl">✨ Version</button>
-                        <button id="save-draft-btn" class="fab btn-primary text-white font-bold py-3 px-6 rounded-xl">💾
-                            Draft</button>
-                    </div>
                 </div>
 
-                <!-- Right Half -->
-                <div>
-                    <div class="mb-6">
-                        <h2 class="text-2xl font-semibold mb-4 text-purple-300">Style</h2>
-                        <div class="glass-input p-4 rounded-xl"><textarea id="style-textarea"
-                                class="w-full h-24 bg-transparent text-gray-200 resize-none outline-none border-0"
+                <!-- Sidebar - Takes 1/3 of space -->
+                <div class="space-y-4">
+                    <div>
+                        <h2 class="text-lg font-semibold mb-2 text-purple-300">Style</h2>
+                        <div class="glass-input p-3 rounded-xl"><textarea id="style-textarea"
+                                class="w-full h-20 bg-transparent text-gray-200 resize-none outline-none border-0 text-sm"
                                 placeholder="Describe the musical style..."></textarea></div>
                     </div>
-                    <div class="mb-6">
-                        <h2 class="text-2xl font-semibold mb-4 text-purple-300">Links</h2>
-                        <div class="glass-input p-4 rounded-xl">
+                    <div>
+                        <h2 class="text-lg font-semibold mb-2 text-purple-300">Links</h2>
+                        <div class="glass-input p-3 rounded-xl">
                             <div id="links-list"></div>
                             <div class="flex mt-2"><input type="text" id="new-link-input" placeholder="Add a new link"
-                                    class="flex-grow glass-input rounded-l-xl p-3 outline-none border-0"><button
+                                    class="flex-grow glass-input rounded-l-xl p-2 outline-none border-0 text-sm"><button
                                     id="add-link-button"
-                                    class="btn-primary text-white font-bold py-3 px-6 rounded-r-xl border-0">Add</button>
+                                    class="btn-primary text-white font-bold py-2 px-4 rounded-r-xl border-0 text-sm">Add</button>
                             </div>
                         </div>
                     </div>
-                    <div class="mb-6">
-                        <h2 class="text-2xl font-semibold mb-4 text-purple-300">Notes</h2>
-                        <div class="glass-input p-4 rounded-xl"><textarea id="notes-textarea"
-                                class="w-full h-24 bg-transparent text-gray-200 resize-none outline-none border-0"
+                    <div>
+                        <h2 class="text-lg font-semibold mb-2 text-purple-300">Notes</h2>
+                        <div class="glass-input p-3 rounded-xl"><textarea id="notes-textarea"
+                                class="w-full h-20 bg-transparent text-gray-200 resize-none outline-none border-0 text-sm"
                                 placeholder="Add your notes here..."></textarea></div>
                     </div>
                 </div>
@@ -1362,6 +1374,7 @@
         const fileMenuBtn = document.getElementById('file-menu-btn');
         const fileMenuDropdown = document.getElementById('file-menu-dropdown');
         const exportSongBtn = document.getElementById('export-song-btn');
+        const createManualBackupBtn = document.getElementById('create-manual-backup-btn');
         const deleteSongEditorBtn = document.getElementById('delete-song-editor-btn');
         const settingsBtn = document.getElementById('settings-btn');
         const settingsDropdown = document.getElementById('settings-dropdown');
@@ -1391,6 +1404,7 @@
         let settings = {
             autoSaveFrequency: 300000, // 5 minutes in milliseconds (default)
             theme: 'dark', // Default theme
+            lastBackupTime: null, // Track last backup time
             sectionColors: {
                 verse: '#3B82F6',
                 chorus: '#8B5CF6', 
@@ -1428,18 +1442,49 @@
 
         // --- Initialization ---
         document.addEventListener('DOMContentLoaded', async () => {
-            await openDB();
-            loadSettings();
-            const songsFromDB = await getAllSongsFromDB();
-            if (songsFromDB.length === 0) {
-                allSongs[sampleSong.songKey] = sampleSong;
-                await saveSongToDB(sampleSong);
-            } else {
-                songsFromDB.forEach(song => {
-                    allSongs[song.songKey] = song;
-                });
+            try {
+                console.log('Starting app initialization...');
+                await openDB();
+                console.log('Database opened successfully');
+                
+                loadSettings();
+                console.log('Settings loaded');
+                
+                const songsFromDB = await getAllSongsFromDB();
+                console.log('Songs from DB:', songsFromDB.length, 'songs found');
+                
+                if (songsFromDB.length === 0) {
+                    console.log('No songs found in database, checking for backup recovery...');
+                    
+                    // Attempt to recover from localStorage backup
+                    const recovered = await attemptDataRecovery();
+                    
+                    if (!recovered) {
+                        console.log('No recovery possible, adding sample song');
+                        allSongs[sampleSong.songKey] = sampleSong;
+                        await saveSongToDB(sampleSong);
+                        console.log('Sample song saved');
+                    } else {
+                        console.log('Data recovered from backup successfully');
+                    }
+                } else {
+                    console.log('Loading existing songs from database');
+                    songsFromDB.forEach(song => {
+                        console.log('Loading song:', song.songName);
+                        allSongs[song.songKey] = song;
+                    });
+                }
+                console.log('Total songs in memory:', Object.keys(allSongs).length);
+                
+                // Check if we need to create an auto backup
+                await checkAndCreateAutoBackup();
+                
+                init();
+            } catch (error) {
+                console.error('Error during initialization:', error);
+                // Show error to user
+                alert('Error loading songs: ' + error.message);
             }
-            init();
         });
 
         function init() {
@@ -1477,6 +1522,9 @@
             // Settings event listeners
             autoSaveFrequencySelect.addEventListener('change', updateAutoSaveSettings);
             themeSelect.addEventListener('change', updateThemeSettings);
+            
+            // Backup event listeners
+            createManualBackupBtn.addEventListener('click', () => createAutoBackup(true));
             
             // Color modal event listeners
             openColorsModalBtn.addEventListener('click', openColorsModal);
@@ -1574,6 +1622,140 @@
 
         function saveSettings() {
             localStorage.setItem('sunoSongsSettings', JSON.stringify(settings));
+        }
+
+        // --- Auto Backup Management ---
+        function shouldCreateAutoBackup() {
+            if (!settings.lastBackupTime) {
+                return true; // First time, create backup
+            }
+            
+            const lastBackup = new Date(settings.lastBackupTime);
+            const now = new Date();
+            const hoursSinceLastBackup = (now - lastBackup) / (1000 * 60 * 60);
+            
+            return hoursSinceLastBackup >= 24;
+        }
+
+        // Recovery function to restore from localStorage backup if needed
+        async function attemptDataRecovery() {
+            const backupKeys = Object.keys(localStorage).filter(key => key.startsWith('sunoSongs_backup_'));
+            if (backupKeys.length === 0) {
+                console.log('No localStorage backups found for recovery');
+                return false;
+            }
+            
+            try {
+                // Get the most recent backup
+                const latestBackupKey = backupKeys.sort().pop();
+                const backupData = JSON.parse(localStorage.getItem(latestBackupKey));
+                
+                console.log(`Found backup from ${backupData.timestamp} with ${backupData.songsCount} songs`);
+                
+                // Restore songs to database
+                for (const song of backupData.songs) {
+                    await saveSongToDB(song);
+                    allSongs[song.songKey] = song;
+                }
+                
+                // Restore settings if available
+                if (backupData.settings) {
+                    settings = { ...settings, ...backupData.settings };
+                    saveSettings();
+                }
+                
+                console.log('Data recovery completed successfully');
+                return true;
+                
+            } catch (error) {
+                console.error('Error during data recovery:', error);
+                return false;
+            }
+        }
+
+        async function createAutoBackup(isManual = false) {
+            try {
+                console.log(isManual ? 'Creating manual backup...' : 'Creating automatic backup...');
+                
+                // Get all songs from database to ensure we have the latest
+                const allSongsFromDB = await getAllSongsFromDB();
+                
+                if (allSongsFromDB.length === 0) {
+                    console.log('No songs to backup');
+                    if (isManual) {
+                        showSaveStatus('No songs to backup');
+                    }
+                    return;
+                }
+                
+                // Create backup data with localStorage settings for complete backup
+                const backupData = {
+                    timestamp: new Date().toISOString(),
+                    version: '1.1',
+                    songsCount: allSongsFromDB.length,
+                    songs: allSongsFromDB,
+                    settings: settings // Include app settings in backup
+                };
+                
+                // Store backup in localStorage as well for automatic recovery
+                const backupKey = `sunoSongs_backup_${Date.now()}`;
+                localStorage.setItem(backupKey, JSON.stringify(backupData));
+                
+                // Keep only last 5 backups in localStorage to avoid storage bloat
+                const backupKeys = Object.keys(localStorage).filter(key => key.startsWith('sunoSongs_backup_'));
+                if (backupKeys.length > 5) {
+                    // Sort by timestamp and remove oldest
+                    backupKeys.sort().slice(0, -5).forEach(oldKey => {
+                        localStorage.removeItem(oldKey);
+                    });
+                }
+                
+                // For manual backups, also offer file download
+                if (isManual) {
+                    const now = new Date();
+                    const dateStr = now.toISOString().split('T')[0]; // YYYY-MM-DD
+                    const timeStr = now.toTimeString().split(' ')[0].replace(/:/g, '-'); // HH-MM-SS
+                    const filename = `backup/SunoSongs_Manual_${dateStr}_${timeStr}.json`;
+                    
+                    // Create and download backup file
+                    const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
+                    const url = URL.createObjectURL(blob);
+                    
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = filename;
+                    link.style.display = 'none';
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    URL.revokeObjectURL(url);
+                    
+                    showSaveStatus(`Manual backup created: ${allSongsFromDB.length} songs backed up`);
+                }
+                
+                // Update last backup time
+                settings.lastBackupTime = new Date().toISOString();
+                saveSettings();
+                
+                console.log(isManual ? 'Manual backup completed' : `Auto backup completed - ${allSongsFromDB.length} songs saved to localStorage`);
+                
+            } catch (error) {
+                console.error('Error creating backup:', error);
+                if (isManual) {
+                    showSaveStatus('Backup failed - check console for details');
+                }
+            }
+        }
+
+        async function checkAndCreateAutoBackup() {
+            if (shouldCreateAutoBackup()) {
+                console.log('24+ hours since last backup, creating silent auto backup...');
+                await createAutoBackup(false); // Silent backup
+            } else {
+                const lastBackup = new Date(settings.lastBackupTime);
+                const hoursSince = Math.floor((new Date() - lastBackup) / (1000 * 60 * 60));
+                console.log(`Last backup was ${hoursSince} hours ago, no backup needed yet`);
+            }
         }
 
         function initializeSettings() {
@@ -1751,6 +1933,9 @@
 
         // --- Jukebox Logic ---
         function renderJukebox() {
+            console.log('Rendering jukebox with', Object.keys(allSongs).length, 'songs');
+            console.log('Songs object:', allSongs);
+            
             jukeboxGrid.innerHTML = '';
             Object.values(allSongs).forEach(song => {
                 const latestVersion = song.versions[song.versions.length - 1];
@@ -2876,7 +3061,7 @@
         function exportCurrentSong() {
             if (!currentSongKey) return;
             const songData = allSongs[currentSongKey];
-            const fileName = `${songData.songKey}.json`;
+            const fileName = `backup/${songData.songKey}.json`;
             const fileContent = JSON.stringify(songData, null, 2);
 
             const a = document.createElement("a");
@@ -2885,6 +3070,7 @@
             a.download = fileName;
             a.click();
             URL.revokeObjectURL(a.href);
+            showSaveStatus(`Song exported: ${songData.songName}`);
         }
 
         async function deleteCurrentSong() {
